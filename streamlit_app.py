@@ -32,6 +32,17 @@ def list_sertifikalar(search=""):
         cursor.execute("SELECT * FROM sertifikalar")
     return cursor.fetchall()
 
+def delete_sertifika(id):
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM sertifikalar WHERE id = ?", (id,))
+    conn.commit()
+
+def update_sertifika(id, no, ad, egitim, tel, tarih, gorsel_path):
+    cursor = conn.cursor()
+    cursor.execute("UPDATE sertifikalar SET sertifika_no=?, ogrenci_ad_soyad=?, egitim_adi=?, telefon=?, sertifika_tarihi=?, gorsel_path=? WHERE id=?",
+                   (no, ad, egitim, tel, tarih, gorsel_path, id))
+    conn.commit()
+
 st.title("🎓 Sertifika Takip Paneli")
 
 if "logged_in" not in st.session_state:
@@ -93,5 +104,31 @@ if data:
                     st.write(f"[📄 PDF Görüntüle]({row[6]})")
                 else:
                     st.image(row[6], width=300)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📝 Düzenle", key=f"edit_{row[0]}"):
+                    with st.form(f"form_{row[0]}"):
+                        no = st.text_input("Sertifika No", value=row[1])
+                        ad = st.text_input("Ad Soyad", value=row[2])
+                        egitim = st.text_input("Eğitim Adı", value=row[3])
+                        tel = st.text_input("Telefon", value=row[4])
+                        tarih = st.date_input("Tarih", value=datetime.strptime(row[5], "%Y-%m-%d"))
+                        yeni_gorsel = st.file_uploader("Yeni Sertifika Görseli", key=f"file_{row[0]}")
+                        gorsel_path = row[6]
+                        if yeni_gorsel:
+                            gorsel_path = os.path.join("uploads", f"{datetime.now().timestamp()}_{yeni_gorsel.name}")
+                            with open(gorsel_path, "wb") as f:
+                                f.write(yeni_gorsel.getbuffer())
+                        kaydet = st.form_submit_button("Güncelle")
+                        if kaydet:
+                            update_sertifika(row[0], no, ad, egitim, tel, tarih.strftime("%Y-%m-%d"), gorsel_path)
+                            st.success("Güncellendi.")
+                            st.experimental_rerun()
+            with col2:
+                if st.button("🗑️ Sil", key=f"delete_{row[0]}"):
+                    delete_sertifika(row[0])
+                    st.warning("Kayıt silindi.")
+                    st.experimental_rerun()
 else:
     st.info("Kayıt bulunamadı.")
