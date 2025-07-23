@@ -1,13 +1,15 @@
 
-# Sertifika Takip Sistemi (Streamlit)
+# Gelişmiş Sertifika Yönetimi Paneli (Streamlit)
 
-Kullanıcı adı ve şifre ile giriş yapılarak öğrencilere ait sertifika bilgilerini kaydedebilir, düzenleyebilir, silebilir ve görsel olarak görüntüleyebilirsiniz.
+Bu uygulama, kurumların eğitim verdiği kişilere ait sertifikaları detaylı bir şekilde yönetmesine olanak tanır.
 
 ## Özellikler
-- Giriş kontrolü (admin / fatih)
-- Sertifika ekleme (görsel + tarih dahil)
-- Sertifika listeleme, arama
-- Sertifika düzenleme ve silme
+- Katılımcı bilgileri (Ad, TC, Doğum Tarihi, Kurum, Ünvan, vb.)
+- Eğitim detayları (Ad, Kod, Süre, Başlangıç-Bitiş, Eğitmen)
+- Sertifika bilgileri (No, Tarih, Geçerlilik, Tür, Durum, Dil)
+- Teslimat durumu, yenileme takibi
+- QR kod ve görsel dosya yükleme desteği
+- Giriş kontrolü
 
 ## Kurulum
 ```bash
