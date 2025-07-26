@@ -60,7 +60,21 @@ veri_tipi = st.selectbox("Veri Tipi", ["Gider", "Gelir"])
 veri_ay = st.selectbox("Bu veriler hangi aya ait?", aylar_sirali)
 veri_giris_ayi = f"{veri_ay} {datetime.now().year}"
 
+
+st.subheader("📁 Yüklenen Tüm Dosyalar")
+dosya_listesi = list(Path(arsiv_klasoru).glob("*.csv"))
+if dosya_listesi:
+    for dosya in sorted(dosya_listesi, reverse=True):
+        with open(dosya, "rb") as f:
+            st.download_button(
+                label=f"{dosya.name}",
+                data=f,
+                file_name=dosya.name,
+                mime="text/csv"
+            )
+
 if uploaded_file:
+
     st.success("Dosya yüklendi. Lütfen veriyi işlemek için 'Dağılımı Hesapla' butonuna tıklayın.")
     if st.button("Dağılımı Hesapla"):
         df = pd.read_excel(uploaded_file)
