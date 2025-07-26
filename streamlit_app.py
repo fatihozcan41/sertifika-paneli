@@ -14,6 +14,12 @@ ay_harita = {
     "September": "Eylül", "October": "Ekim", "November": "Kasım", "December": "Aralık"
 }
 
+# Tüm aylar sırasıyla
+aylar_sirali = [
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+]
+
 def aylara_dagit(df, veri_giris_ayi):
     dagilimlar = []
     for _, row in df.iterrows():
@@ -49,10 +55,7 @@ def aylara_dagit(df, veri_giris_ayi):
 uploaded_file = st.file_uploader("Excel dosyasını yükleyin", type=["xlsx"])
 firma = st.selectbox("Firma Seçin", ["Etki Akademi", "Etki Osgb"])
 veri_tipi = st.selectbox("Veri Tipi", ["Gider", "Gelir"])
-veri_ay = st.selectbox("Bu veriler hangi aya ait?", [
-    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
-])
+veri_ay = st.selectbox("Bu veriler hangi aya ait?", aylar_sirali)
 veri_giris_ayi = f"{veri_ay} {datetime.now().year}"
 
 if uploaded_file:
@@ -62,13 +65,23 @@ if uploaded_file:
 
     if "Gider Başlangıç" in df.columns and "Gider Bitiş Tarihi" in df.columns and "ANA DÖVİZ BORÇ" in df.columns:
         dagilim_df = aylara_dagit(df, veri_giris_ayi)
+
         st.success("Aylık dağılım oluşturuldu")
         st.dataframe(dagilim_df)
 
+        # Pivot tablo
+        aylar_yil = [f"{ay} {datetime.now().year}" for ay in aylar_sirali]
+        pivot_df = dagilim_df.pivot_table(index="Hesap", columns="Ay", values="Tutar", aggfunc="sum").fillna(0)
+        pivot_df = pivot_df.reindex(columns=aylar_yil, fill_value=0).reset_index()
+        st.subheader("Pivot Formatında Görünüm")
+        st.dataframe(pivot_df)
+
+        # Excel çıktısı
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
             dagilim_df.to_excel(writer, index=False, sheet_name="Aylık Dağılım")
-        st.download_button(label="Aylık Dağılım Excel İndir", data=buffer.getvalue(),
-                           file_name="aylik_dagilim.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            pivot_df.to_excel(writer, index=False, sheet_name="Pivot Dağılım")
+        st.download_button(label="Excel İndir (Aylık + Pivot)", data=buffer.getvalue(),
+                           file_name="aylik_dagilim_pivot.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     else:
         st.error("Excel dosyasında gerekli sütunlar bulunamadı.")
