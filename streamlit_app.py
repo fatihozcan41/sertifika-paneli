@@ -14,7 +14,7 @@ ay_harita = {
     "September": "Eylül", "October": "Ekim", "November": "Kasım", "December": "Aralık"
 }
 
-def aylara_dagit(df):
+def aylara_dagit(df, veri_giris_ayi):
     dagilimlar = []
     for _, row in df.iterrows():
         try:
@@ -40,7 +40,8 @@ def aylara_dagit(df):
                 "Firma": row["Firma"],
                 "Tür": row["Tür"],
                 "Ay": ay_adi,
-                "Tutar": round(tutar, 2)
+                "Tutar": round(tutar, 2),
+                "Veri Giriş Ayı": veri_giris_ayi
             })
 
     return pd.DataFrame(dagilimlar)
@@ -48,6 +49,11 @@ def aylara_dagit(df):
 uploaded_file = st.file_uploader("Excel dosyasını yükleyin", type=["xlsx"])
 firma = st.selectbox("Firma Seçin", ["Etki Akademi", "Etki Osgb"])
 veri_tipi = st.selectbox("Veri Tipi", ["Gider", "Gelir"])
+veri_ay = st.selectbox("Bu veriler hangi aya ait?", [
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+])
+veri_giris_ayi = f"{veri_ay} {datetime.now().year}"
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
@@ -55,11 +61,10 @@ if uploaded_file:
     df["Tür"] = veri_tipi
 
     if "Gider Başlangıç" in df.columns and "Gider Bitiş Tarihi" in df.columns and "ANA DÖVİZ BORÇ" in df.columns:
-        dagilim_df = aylara_dagit(df)
+        dagilim_df = aylara_dagit(df, veri_giris_ayi)
         st.success("Aylık dağılım oluşturuldu")
         st.dataframe(dagilim_df)
 
-        # Excel çıktısı indirilebilir
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
             dagilim_df.to_excel(writer, index=False, sheet_name="Aylık Dağılım")
