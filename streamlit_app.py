@@ -3,7 +3,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
-import os
 
 st.set_page_config(page_title="Bütçe Yönetimi", layout="wide")
 st.title("📊 Firma Bazlı Bütçe Dağılım Sistemi")
@@ -14,15 +13,24 @@ if uploaded_file:
     df = pd.read_excel(uploaded_file)
     st.success("Dosya yüklendi ve analiz ediliyor...")
 
-    df["Gider Başlangıç"] = pd.to_datetime(df["Gider Başlangıç"])
-    df["Gider Bitiş Tarihi"] = pd.to_datetime(df["Gider Bitiş Tarihi"])
-    df["TARİH"] = pd.to_datetime(df["TARİH"])
+    # Başlıklardaki boşlukları temizle
+    df.columns = df.columns.str.strip()
+
+    # "ciroya dahil etme" hariç tut
     df = df[df["Gider Başlangıç"].astype(str).str.lower() != "ciroya dahil etme"]
+
+    # Tarihleri güvenli şekilde çevir
+    df["Gider Başlangıç"] = pd.to_datetime(df["Gider Başlangıç"], errors="coerce")
+    df["Gider Bitiş Tarihi"] = pd.to_datetime(df["Gider Bitiş Tarihi"], errors="coerce")
+    df["TARİH"] = pd.to_datetime(df["TARİH"], errors="coerce")
+
+    # Geçerli tarihleri olan kayıtlarla devam et
+    df = df[df["Gider Başlangıç"].notna() & df["Gider Bitiş Tarihi"].notna()]
 
     def aylara_dagit(row):
         tarih_araligi = pd.date_range(start=row["Gider Başlangıç"], end=row["Gider Bitiş Tarihi"], freq="MS")
         tutar = row["ANA DÖVİZ BORÇ"]
-        esik = round(tutar / len(tarih_araligi), 2)
+        esik = round(tutar / len(tarih_araligi), 2) if len(tarih_araligi) > 0 else 0
         return pd.DataFrame({
             "FİRMA": row["FİRMA"],
             "HESAP İSMİ": row["HESAP İSMİ"],
