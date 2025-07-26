@@ -60,7 +60,21 @@ veri_tipi = st.selectbox("Veri Tipi", ["Gider", "Gelir"])
 veri_ay = st.selectbox("Bu veriler hangi aya ait?", aylar_sirali)
 veri_giris_ayi = f"{veri_ay} {datetime.now().year}"
 
+
+st.subheader("📁 Yüklenen Tüm Dosyalar")
+dosya_listesi = list(Path(arsiv_klasoru).glob("*.csv"))
+if dosya_listesi:
+    for dosya in sorted(dosya_listesi, reverse=True):
+        with open(dosya, "rb") as f:
+            st.download_button(
+                label=f"{dosya.name}",
+                data=f,
+                file_name=dosya.name,
+                mime="text/csv"
+            )
+
 if uploaded_file:
+
     st.success("Dosya yüklendi. Lütfen veriyi işlemek için 'Dağılımı Hesapla' butonuna tıklayın.")
     if st.button("Dağılımı Hesapla"):
         df = pd.read_excel(uploaded_file)
@@ -109,45 +123,3 @@ if uploaded_file:
                                file_name="tum_aylik_dagilim_pivot.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         else:
             st.error("Excel dosyasında gerekli sütunlar bulunamadı.")
-
-
-import shutil
-from pathlib import Path
-import os
-
-st.markdown("---")
-if st.button("🔙 Geri Al (Son Yüklemeyi Sil)"):
-    try:
-        arsiv_klasoru = Path("arsiv")
-        if arsiv_klasoru.exists():
-            klasorler = sorted(arsiv_klasoru.glob("*"), key=os.path.getmtime, reverse=True)
-            if klasorler:
-                silinecek = klasorler[0]
-                if silinecek.is_dir():
-                    shutil.rmtree(silinecek)
-                else:
-                    silinecek.unlink()
-                st.success(f"{silinecek.name} başarıyla silindi.")
-            else:
-                st.warning("Silinecek dosya bulunamadı.")
-        else:
-            st.info("Arşiv klasörü mevcut değil.")
-    except Exception as e:
-        st.error(f"Hata oluştu: {e}")
-
-
-# Pivot görünüm: Etki Akademi alt kırılımları
-if "Etki Akademi" in df["Firma"].unique():
-    st.subheader("📊 Etki Akademi - Alt Kırılım Bazlı Pivot Tablo")
-
-    etki_df = df[df["Firma"] == "Etki Akademi"]
-    if "SORUMLULUK MERKEZİ İSMİ" in etki_df.columns:
-        pivot = etki_df.pivot_table(
-            index="SORUMLULUK MERKEZİ İSMİ",
-            columns="Ay",
-            values="Tutar",
-            aggfunc="sum",
-            fill_value=0
-        ).reset_index()
-        pivot = pivot.rename(columns=lambda x: str(x).capitalize())
-        st.dataframe(pivot, use_container_width=True)
