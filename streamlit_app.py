@@ -1,79 +1,56 @@
 
 import streamlit as st
 import pandas as pd
-import datetime
 import locale
+from datetime import datetime
+import calendar
 
-# Türkçe ay isimleri için locale ayarla
+# Locale ayarı: Türkçe ay isimleri
 try:
     locale.setlocale(locale.LC_TIME, "tr_TR.UTF-8")
 except:
-    locale.setlocale(locale.LC_TIME, "turkish")
+    locale.setlocale(locale.LC_TIME, "Turkish_Turkey")
 
-st.set_page_config(page_title="Bütçe Takip Sistemi", layout="wide")
-st.title("📊 Firma Bütçe Takip Sistemi")
+st.title("Firma Bütçe Takip ve Aylık Dağılım")
 
-# Firma seçimi
 firma = st.selectbox("Firma Seçin", ["Etki Akademi", "Etki Osgb"])
-
-# Veri tipi seçimi
 veri_tipi = st.selectbox("Veri Tipi", ["Gider", "Gelir"])
+secili_ay = st.selectbox("Hangi Ayın Verisi", list(calendar.month_name)[1:])
 
-# Ay seçimi
-bugun = datetime.date.today()
-yil = bugun.year
-aylar = [datetime.date(yil, m, 1).strftime("%B") for m in range(1, 13)]
-secili_ay = st.selectbox("Hangi ayın verisi giriliyor?", aylar, index=bugun.month - 1)
+yuklenen_dosya = st.file_uploader("Excel dosyasını yükleyin", type=["xlsx"])
+if yuklenen_dosya:
+    df = pd.read_excel(yuklenen_dosya)
 
-# Excel yükleme
-uploaded_file = st.file_uploader("Excel dosyasını yükleyin (.xlsx)", type="xlsx")
-
-def aylara_dagit(row):
-    try:
-        baslangic = pd.to_datetime(row["Gider Başlangıç"], errors="coerce")
-        bitis = pd.to_datetime(row["Gider Bitiş Tarihi"], errors="coerce")
-        if pd.isna(baslangic) or pd.isna(bitis):
-            return pd.DataFrame()
-        aylar_arasi = pd.date_range(start=baslangic, end=bitis, freq='MS')
-        if len(aylar_arasi) == 0:
-            return pd.DataFrame()
-        tutar = row["ANA DÖVİZ BORÇ"] / len(aylar_arasi)
-        return pd.DataFrame({
-            "Firma": [firma] * len(aylar_arasi),
-            "Veri Tipi": [veri_tipi] * len(aylar_arasi),
-            "HESAP İSMİ": [row["HESAP İSMİ"]] * len(aylar_arasi),
-            "Yıl": [d.year for d in aylar_arasi],
-            "Ay": [d.strftime("%B") for d in aylar_arasi],
-            "Tutar": [round(tutar, 2)] * len(aylar_arasi)
-        })
-    except:
-        return pd.DataFrame()
-
-if uploaded_file:
-    try:
-        df = pd.read_excel(uploaded_file)
-        df.columns = df.columns.str.strip()
-
-        st.success(f"{firma} - {veri_tipi} verisi başarıyla yüklendi ({secili_ay} {yil})")
-        st.subheader("Yüklenen Veri")
-        st.dataframe(df)
+    if not all(k in df.columns for k in ["TARİH", "HESAP İSMİ", "ANA DÖVİZ BORÇ", "Gider Başlangıç", "Gider Bitiş Tarihi"]):
+        st.error("Excel dosyasında gerekli sütunlar bulunmuyor.")
+    else:
+        def aylara_dagit(row):
+            baslangic = str(row["Gider Başlangıç"])
+            bitis = str(row["Gider Bitiş Tarihi"])
+            try:
+                start = pd.to_datetime("01 " + baslangic, dayfirst=True)
+                end = pd.to_datetime("01 " + bitis, dayfirst=True)
+                months = pd.date_range(start, end, freq="MS")
+                tutar = row["ANA DÖVİZ BORÇ"] / len(months)
+                data = {
+                    "HESAP İSMİ": row["HESAP İSMİ"],
+                    "FİRMA": firma,
+                    "VERİ TİPİ": veri_tipi,
+                }
+                for m in months:
+                    ay_ad = m.strftime("%B")
+                    data[ay_ad] = round(tutar, 2)
+                return pd.DataFrame([data])
+            except:
+                return pd.DataFrame()
 
         dagilim_df = pd.concat([aylara_dagit(row) for _, row in df.iterrows()], ignore_index=True)
 
         if not dagilim_df.empty:
-            st.subheader("📅 Aylık Dağılım Tablosu")
-            dagilim_df["Ay"] = pd.to_datetime(dagilim_df["Ay"], format="%B").dt.strftime("%B")  # Türkçe görünüm
-            dagilim_df["Ay"] = dagilim_df["Ay"].apply(lambda x: x.capitalize())  # Ay adlarını büyük harfle başlat
+            st.success("Aylık dağılım başarıyla oluşturuldu.")
             st.dataframe(dagilim_df)
 
-            st.subheader("📈 Gider Türlerine Göre Dağılım")
-            toplamlar = dagilim_df.groupby("HESAP İSMİ")["Tutar"].sum().reset_index()
-            st.dataframe(toplamlar)
-
-            st.bar_chart(dagilim_df.groupby(["Yıl", "Ay"])["Tutar"].sum())
-
+            toplamlar = dagilim_df.drop(columns=["HESAP İSMİ", "FİRMA", "VERİ TİPİ"]).sum()
+            st.bar_chart(toplamlar)
         else:
-            st.warning("Dağılım yapılacak geçerli veri bulunamadı.")
-
-    except Exception as e:
-        st.error(f"Hata oluştu: {e}")
+            st.warning("Dağılım oluşturulamadı. Tarihler kontrol edilmeli.")
