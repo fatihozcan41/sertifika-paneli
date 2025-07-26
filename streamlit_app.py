@@ -1,66 +1,55 @@
 
 import streamlit as st
-import sqlite3
-import os
+import pandas as pd
+import plotly.express as px
 from datetime import datetime
+import os
 
-st.set_page_config(page_title="Gelişmiş Sertifika Paneli", layout="centered")
+st.set_page_config(page_title="Bütçe Yönetimi", layout="wide")
+st.title("📊 Firma Bazlı Bütçe Dağılım Sistemi")
 
-# Kullanıcı kontrolü
-def check_login(username, password):
-    users = {"admin": "1234", "fatih": "12345"}
-    return users.get(username) == password
+uploaded_file = st.file_uploader("Excel gider dosyasını yükle (.xlsx)", type=["xlsx"])
 
-# Veritabanı bağlantısı ve gelişmiş tablo
-def get_db():
-    conn = sqlite3.connect("sertifikalar.db", check_same_thread=False)
-    conn.execute("""CREATE TABLE IF NOT EXISTS sertifikalar (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sertifika_no TEXT,
-        sertifika_kodu TEXT,
-        ogrenci_ad_soyad TEXT,
-        tc_no TEXT,
-        dogum_tarihi TEXT,
-        eposta TEXT,
-        telefon TEXT,
-        kurum TEXT,
-        unvan TEXT,
-        egitim_adi TEXT,
-        egitim_kodu TEXT,
-        egitim_suresi INTEGER,
-        egitim_yeri TEXT,
-        egitim_baslangic TEXT,
-        egitim_bitis TEXT,
-        egitmen_adi TEXT,
-        sertifika_tarihi TEXT,
-        gecerlilik_tarihi TEXT,
-        sertifika_turu TEXT,
-        sertifika_durumu TEXT,
-        sertifika_dili TEXT,
-        teslim_durumu TEXT,
-        yenileme_gerekli TEXT,
-        yenileme_tarihi TEXT,
-        gorsel_path TEXT
-    )""")
-    return conn
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
+    st.success("Dosya yüklendi ve analiz ediliyor...")
 
-st.title("🎓 Gelişmiş Sertifika Yönetimi")
+    df["Gider Başlangıç"] = pd.to_datetime(df["Gider Başlangıç"])
+    df["Gider Bitiş Tarihi"] = pd.to_datetime(df["Gider Bitiş Tarihi"])
+    df["TARİH"] = pd.to_datetime(df["TARİH"])
+    df = df[df["Gider Başlangıç"].astype(str).str.lower() != "ciroya dahil etme"]
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+    def aylara_dagit(row):
+        tarih_araligi = pd.date_range(start=row["Gider Başlangıç"], end=row["Gider Bitiş Tarihi"], freq="MS")
+        tutar = row["ANA DÖVİZ BORÇ"]
+        esik = round(tutar / len(tarih_araligi), 2)
+        return pd.DataFrame({
+            "FİRMA": row["FİRMA"],
+            "HESAP İSMİ": row["HESAP İSMİ"],
+            "YIL": tarih_araligi.year,
+            "AY": tarih_araligi.month,
+            "TUTAR": esik
+        })
 
-if not st.session_state.logged_in:
-    with st.form("login"):
-        st.subheader("🔐 Giriş Yap")
-        username = st.text_input("Kullanıcı Adı")
-        password = st.text_input("Şifre", type="password")
-        submitted = st.form_submit_button("Giriş")
-        if submitted and check_login(username, password):
-            st.session_state.logged_in = True
-            st.success("Giriş başarılı.")
-        elif submitted:
-            st.error("Kullanıcı adı veya şifre hatalı.")
-    st.stop()
+    dagilim_df = pd.concat([aylara_dagit(row) for _, row in df.iterrows()], ignore_index=True)
 
-conn = get_db()
-st.success("Veritabanı yapısı hazır. Gelişmiş panel buradan devam ettirilebilir.")
+    firma_sec = st.selectbox("Firma Seçin", sorted(dagilim_df["FİRMA"].unique()))
+    yil_sec = st.selectbox("Yıl Seçin", sorted(dagilim_df["YIL"].unique()))
+
+    filtre = dagilim_df[(dagilim_df["FİRMA"] == firma_sec) & (dagilim_df["YIL"] == yil_sec)]
+    pivot = filtre.pivot_table(index="AY", values="TUTAR", aggfunc="sum").reindex(range(1,13), fill_value=0)
+
+    st.subheader("🧾 Aylık Toplam Giderler")
+    st.bar_chart(pivot)
+
+    st.subheader("📂 Gider Türü Dağılımı (Yıllık)")
+    gider_pasta = filtre.groupby("HESAP İSMİ")["TUTAR"].sum().reset_index()
+    fig = px.pie(gider_pasta, names="HESAP İSMİ", values="TUTAR", title="Gider Türü Dağılımı")
+    st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("📄 Dağıtılmış Tablonun Detayı"):
+        st.dataframe(filtre)
+
+    st.success("Veriler başarıyla işlendi ve görselleştirildi.")
+else:
+    st.info("Lütfen bir Excel dosyası yükleyin.")
