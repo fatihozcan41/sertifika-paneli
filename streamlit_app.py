@@ -4,6 +4,7 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime
 import os
+import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 st.title("Firma Bütçe Takip ve Aylık Dağıtım Uygulaması")
@@ -68,10 +69,8 @@ if uploaded_file:
     if "Gider Başlangıç" in df.columns and "Gider Bitiş Tarihi" in df.columns and "ANA DÖVİZ BORÇ" in df.columns:
         yeni_df = aylara_dagit(df, veri_giris_ayi)
 
-        # Mevcut veri varsa oku
         if os.path.exists(veri_cache_path):
             eski_df = pd.read_csv(veri_cache_path)
-            # Aynı Firma, Tür ve Veri Giriş Ayı olan TÜM veriler silinir
             filtre = ~((eski_df["Firma"] == firma) & 
                        (eski_df["Tür"] == veri_tipi) &
                        (eski_df["Veri Giriş Ayı"] == veri_giris_ayi))
@@ -80,21 +79,37 @@ if uploaded_file:
         else:
             birlesik_df = yeni_df
 
-        # Cache ve arşivle
         birlesik_df.to_csv(veri_cache_path, index=False)
         now_str = datetime.now().strftime("%Y%m%d-%H%M%S")
         arsiv_yolu = os.path.join(arsiv_klasoru, f"{firma}_{veri_giris_ayi}_{now_str}.csv")
         df.to_csv(arsiv_yolu, index=False)
 
-        st.success("Veri eklendi. Aynı ay-firma-tür için tüm önceki veriler silinip yenileri yüklendi.")
+        st.success("Veri eklendi. Önceki aynı ay-firma verileri silindi.")
         st.dataframe(birlesik_df)
 
-        # Pivot tablo
         aylar_yil = [f"{ay} {datetime.now().year}" for ay in aylar_sirali]
         pivot_df = birlesik_df.pivot_table(index="Hesap", columns="Ay", values="Tutar", aggfunc="sum").fillna(0)
         pivot_df = pivot_df.reindex(columns=aylar_yil, fill_value=0).reset_index()
         st.subheader("Pivot Formatında Görünüm")
         st.dataframe(pivot_df)
+
+        # Grafikler
+        st.subheader("Firma Bazlı Grafikler")
+        for f in birlesik_df["Firma"].unique():
+            st.markdown(f"### {f}")
+            firma_df = birlesik_df[birlesik_df["Firma"] == f]
+            gelirler = firma_df[firma_df["Tür"] == "Gelir"].groupby("Ay")["Tutar"].sum()
+            giderler = firma_df[firma_df["Tür"] == "Gider"].groupby("Ay")["Tutar"].sum()
+            aylar = sorted(set(gelirler.index).union(giderler.index))
+
+            fig, ax = plt.subplots()
+            ax.bar(aylar, gelirler.reindex(aylar, fill_value=0), label="Gelir", color="green")
+            ax.bar(aylar, -giderler.reindex(aylar, fill_value=0), label="Gider", color="red")
+            ax.set_ylabel("Tutar (TL)")
+            ax.set_title(f"{f} - Aylık Gelir/Gider Karşılaştırması")
+            ax.legend()
+            plt.xticks(rotation=45)
+            st.pyplot(fig)
 
         # Excel çıktısı
         buffer = BytesIO()
