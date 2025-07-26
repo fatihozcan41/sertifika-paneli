@@ -1,63 +1,54 @@
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-from datetime import datetime
+import datetime
 
-st.set_page_config(page_title="Bütçe Yönetimi", layout="wide")
-st.title("📊 Firma Bazlı Bütçe Dağılım Sistemi")
+st.title("Aylık Gider Dağılım Uygulaması")
 
-uploaded_file = st.file_uploader("Excel gider dosyasını yükle (.xlsx)", type=["xlsx"])
+uploaded_file = st.file_uploader("Excel dosyasını yükleyin (.xlsx)", type="xlsx")
+
+def aylara_dagit(row):
+    try:
+        baslangic = pd.to_datetime(row["Gider Başlangıç"])
+        bitis = pd.to_datetime(row["Gider Bitiş Tarihi"])
+    except:
+        return pd.DataFrame()
+
+    if isinstance(row["Gider Başlangıç"], str) and "ciroya dahil etme" in row["Gider Başlangıç"].lower():
+        return pd.DataFrame()  # Ciroya dahil olmayanları atla
+
+    aylar = pd.date_range(baslangic, bitis, freq='MS')  # Her ayın başı
+    tutar = row["ANA DÖVİZ BORÇ"] / len(aylar) if len(aylar) > 0 else 0
+
+    return pd.DataFrame({
+        "HESAP İSMİ": [row["HESAP İSMİ"]] * len(aylar),
+        "YIL": [d.year for d in aylar],
+        "AY": [d.strftime("%B") for d in aylar],
+        "TUTAR": [tutar] * len(aylar)
+    })
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    st.success("Dosya yüklendi ve analiz ediliyor...")
+    df.columns = df.columns.str.strip()  # Başlıklardaki boşlukları temizle
 
-    # Başlıklardaki boşlukları temizle
-    df.columns = df.columns.str.strip()
+    try:
+        dagilim_df = pd.concat([aylara_dagit(row) for _, row in df.iterrows()], ignore_index=True)
 
-    # "ciroya dahil etme" hariç tut
-    df = df[df["Gider Başlangıç"].astype(str).str.lower() != "ciroya dahil etme"]
+        st.subheader("Aylık Dağılım Tablosu")
+        st.dataframe(dagilim_df)
 
-    # Tarihleri güvenli şekilde çevir
-    df["Gider Başlangıç"] = pd.to_datetime(df["Gider Başlangıç"], errors="coerce")
-    df["Gider Bitiş Tarihi"] = pd.to_datetime(df["Gider Bitiş Tarihi"], errors="coerce")
-    df["TARİH"] = pd.to_datetime(df["TARİH"], errors="coerce")
+        st.subheader("Toplam Gider Grafiği")
+        grafik_df = dagilim_df.groupby(["YIL", "AY"]).sum(numeric_only=True).reset_index()
+        st.bar_chart(grafik_df.pivot(index="AY", columns="YIL", values="TUTAR"))
 
-    # Geçerli tarihleri olan kayıtlarla devam et
-    df = df[df["Gider Başlangıç"].notna() & df["Gider Bitiş Tarihi"].notna()]
-
-    def aylara_dagit(row):
-        tarih_araligi = pd.date_range(start=row["Gider Başlangıç"], end=row["Gider Bitiş Tarihi"], freq="MS")
-        tutar = row["ANA DÖVİZ BORÇ"]
-        esik = round(tutar / len(tarih_araligi), 2) if len(tarih_araligi) > 0 else 0
-        return pd.DataFrame({
-            "FİRMA": row["FİRMA"],
-            "HESAP İSMİ": row["HESAP İSMİ"],
-            "YIL": tarih_araligi.year,
-            "AY": tarih_araligi.month,
-            "TUTAR": esik
-        })
-
-    dagilim_df = pd.concat([aylara_dagit(row) for _, row in df.iterrows()], ignore_index=True)
-
-    firma_sec = st.selectbox("Firma Seçin", sorted(dagilim_df["FİRMA"].unique()))
-    yil_sec = st.selectbox("Yıl Seçin", sorted(dagilim_df["YIL"].unique()))
-
-    filtre = dagilim_df[(dagilim_df["FİRMA"] == firma_sec) & (dagilim_df["YIL"] == yil_sec)]
-    pivot = filtre.pivot_table(index="AY", values="TUTAR", aggfunc="sum").reindex(range(1,13), fill_value=0)
-
-    st.subheader("🧾 Aylık Toplam Giderler")
-    st.bar_chart(pivot)
-
-    st.subheader("📂 Gider Türü Dağılımı (Yıllık)")
-    gider_pasta = filtre.groupby("HESAP İSMİ")["TUTAR"].sum().reset_index()
-    fig = px.pie(gider_pasta, names="HESAP İSMİ", values="TUTAR", title="Gider Türü Dağılımı")
-    st.plotly_chart(fig, use_container_width=True)
-
-    with st.expander("📄 Dağıtılmış Tablonun Detayı"):
-        st.dataframe(filtre)
-
-    st.success("Veriler başarıyla işlendi ve görselleştirildi.")
-else:
-    st.info("Lütfen bir Excel dosyası yükleyin.")
+        st.subheader("Gider Türlerine Göre Dağılım")
+        gider_turleri = dagilim_df.groupby("HESAP İSMİ")["TUTAR"].sum().reset_index()
+        st.dataframe(gider_turleri)
+        st.plotly_chart(
+            {
+                "data": [{"labels": gider_turleri["HESAP İSMİ"], "values": gider_turleri["TUTAR"], "type": "pie"}],
+                "layout": {"title": "Gider Türlerine Göre Dağılım"}
+            }
+        )
+    except Exception as e:
+        st.error(f"Hata oluştu: {e}")
