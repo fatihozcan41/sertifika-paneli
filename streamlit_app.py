@@ -62,61 +62,61 @@ veri_ay = st.selectbox("Bu veriler hangi aya ait?", aylar_sirali)
 veri_giris_ayi = f"{veri_ay} {datetime.now().year}"
 
 if uploaded_file:
-    df = pd.read_excel(uploaded_file)
-    df["Firma"] = firma
-    df["Tür"] = veri_tipi
+    st.success("Dosya yüklendi. Lütfen veriyi işlemek için 'Dağılımı Hesapla' butonuna tıklayın.")
+    if st.button("Dağılımı Hesapla"):
+        df = pd.read_excel(uploaded_file)
+        df["Firma"] = firma
+        df["Tür"] = veri_tipi
 
-    if "Gider Başlangıç" in df.columns and "Gider Bitiş Tarihi" in df.columns and "ANA DÖVİZ BORÇ" in df.columns:
-        yeni_df = aylara_dagit(df, veri_giris_ayi)
+        if "Gider Başlangıç" in df.columns and "Gider Bitiş Tarihi" in df.columns and "ANA DÖVİZ BORÇ" in df.columns:
+            yeni_df = aylara_dagit(df, veri_giris_ayi)
 
-        if os.path.exists(veri_cache_path):
-            eski_df = pd.read_csv(veri_cache_path)
-            filtre = ~((eski_df["Firma"] == firma) & 
-                       (eski_df["Tür"] == veri_tipi) &
-                       (eski_df["Veri Giriş Ayı"] == veri_giris_ayi))
-            eski_df = eski_df[filtre]
-            birlesik_df = pd.concat([eski_df, yeni_df], ignore_index=True)
+            if os.path.exists(veri_cache_path):
+                eski_df = pd.read_csv(veri_cache_path)
+                filtre = ~((eski_df["Firma"] == firma) & 
+                           (eski_df["Tür"] == veri_tipi) &
+                           (eski_df["Veri Giriş Ayı"] == veri_giris_ayi))
+                eski_df = eski_df[filtre]
+                birlesik_df = pd.concat([eski_df, yeni_df], ignore_index=True)
+            else:
+                birlesik_df = yeni_df
+
+            birlesik_df.to_csv(veri_cache_path, index=False)
+            now_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+            arsiv_yolu = os.path.join(arsiv_klasoru, f"{firma}_{veri_giris_ayi}_{now_str}.csv")
+            df.to_csv(arsiv_yolu, index=False)
+
+            st.success("Veri işlendi ve dağıtım tamamlandı.")
+            st.dataframe(birlesik_df)
+
+            aylar_yil = [f"{ay} {datetime.now().year}" for ay in aylar_sirali]
+            pivot_df = birlesik_df.pivot_table(index="Hesap", columns="Ay", values="Tutar", aggfunc="sum").fillna(0)
+            pivot_df = pivot_df.reindex(columns=aylar_yil, fill_value=0).reset_index()
+            st.subheader("Pivot Formatında Görünüm")
+            st.dataframe(pivot_df)
+
+            st.subheader("Firma Bazlı Grafikler")
+            for f in birlesik_df["Firma"].unique():
+                st.markdown(f"### {f}")
+                firma_df = birlesik_df[birlesik_df["Firma"] == f]
+                gelirler = firma_df[firma_df["Tür"] == "Gelir"].groupby("Ay")["Tutar"].sum()
+                giderler = firma_df[firma_df["Tür"] == "Gider"].groupby("Ay")["Tutar"].sum()
+                aylar = sorted(set(gelirler.index).union(giderler.index))
+
+                fig, ax = plt.subplots()
+                ax.bar(aylar, gelirler.reindex(aylar, fill_value=0), label="Gelir", color="green")
+                ax.bar(aylar, -giderler.reindex(aylar, fill_value=0), label="Gider", color="red")
+                ax.set_ylabel("Tutar (TL)")
+                ax.set_title(f"{f} - Aylık Gelir/Gider Karşılaştırması")
+                ax.legend()
+                plt.xticks(rotation=45)
+                st.pyplot(fig)
+
+            buffer = BytesIO()
+            with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+                birlesik_df.to_excel(writer, index=False, sheet_name="Tüm Dağılım")
+                pivot_df.to_excel(writer, index=False, sheet_name="Pivot Dağılım")
+            st.download_button(label="Excel İndir (Tüm + Pivot)", data=buffer.getvalue(),
+                               file_name="tum_aylik_dagilim_pivot.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         else:
-            birlesik_df = yeni_df
-
-        birlesik_df.to_csv(veri_cache_path, index=False)
-        now_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-        arsiv_yolu = os.path.join(arsiv_klasoru, f"{firma}_{veri_giris_ayi}_{now_str}.csv")
-        df.to_csv(arsiv_yolu, index=False)
-
-        st.success("Veri eklendi. Önceki aynı ay-firma verileri silindi.")
-        st.dataframe(birlesik_df)
-
-        aylar_yil = [f"{ay} {datetime.now().year}" for ay in aylar_sirali]
-        pivot_df = birlesik_df.pivot_table(index="Hesap", columns="Ay", values="Tutar", aggfunc="sum").fillna(0)
-        pivot_df = pivot_df.reindex(columns=aylar_yil, fill_value=0).reset_index()
-        st.subheader("Pivot Formatında Görünüm")
-        st.dataframe(pivot_df)
-
-        # Grafikler
-        st.subheader("Firma Bazlı Grafikler")
-        for f in birlesik_df["Firma"].unique():
-            st.markdown(f"### {f}")
-            firma_df = birlesik_df[birlesik_df["Firma"] == f]
-            gelirler = firma_df[firma_df["Tür"] == "Gelir"].groupby("Ay")["Tutar"].sum()
-            giderler = firma_df[firma_df["Tür"] == "Gider"].groupby("Ay")["Tutar"].sum()
-            aylar = sorted(set(gelirler.index).union(giderler.index))
-
-            fig, ax = plt.subplots()
-            ax.bar(aylar, gelirler.reindex(aylar, fill_value=0), label="Gelir", color="green")
-            ax.bar(aylar, -giderler.reindex(aylar, fill_value=0), label="Gider", color="red")
-            ax.set_ylabel("Tutar (TL)")
-            ax.set_title(f"{f} - Aylık Gelir/Gider Karşılaştırması")
-            ax.legend()
-            plt.xticks(rotation=45)
-            st.pyplot(fig)
-
-        # Excel çıktısı
-        buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-            birlesik_df.to_excel(writer, index=False, sheet_name="Tüm Dağılım")
-            pivot_df.to_excel(writer, index=False, sheet_name="Pivot Dağılım")
-        st.download_button(label="Excel İndir (Tüm + Pivot)", data=buffer.getvalue(),
-                           file_name="tum_aylik_dagilim_pivot.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    else:
-        st.error("Excel dosyasında gerekli sütunlar bulunamadı.")
+            st.error("Excel dosyasında gerekli sütunlar bulunamadı.")
