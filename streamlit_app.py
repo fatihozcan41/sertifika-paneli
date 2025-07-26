@@ -134,3 +134,20 @@ if st.button("🔙 Geri Al (Son Yüklemeyi Sil)"):
             st.info("Arşiv klasörü mevcut değil.")
     except Exception as e:
         st.error(f"Hata oluştu: {e}")
+
+
+# Pivot görünüm: Etki Akademi alt kırılımları
+if "Etki Akademi" in df["Firma"].unique():
+    st.subheader("📊 Etki Akademi - Alt Kırılım Bazlı Pivot Tablo")
+
+    etki_df = df[df["Firma"] == "Etki Akademi"]
+    if "SORUMLULUK MERKEZİ İSMİ" in etki_df.columns:
+        pivot = etki_df.pivot_table(
+            index="SORUMLULUK MERKEZİ İSMİ",
+            columns="Ay",
+            values="Tutar",
+            aggfunc="sum",
+            fill_value=0
+        ).reset_index()
+        pivot = pivot.rename(columns=lambda x: str(x).capitalize())
+        st.dataframe(pivot, use_container_width=True)
