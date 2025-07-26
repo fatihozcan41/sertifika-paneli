@@ -1,26 +1,18 @@
 
-# Lokal Bütçe Yönetimi Prototipi
-
-## Gereksinimler
-- Python 3.9 veya üzeri
-- pip ile kütüphaneler kurulmalı:
-
-```
-pip install -r requirements.txt
-```
-
-## Uygulamanın Çalıştırılması
-
-```
-streamlit run streamlit_app.py
-```
+# Firma Bütçe Takip Sistemi (v4)
 
 ## Özellikler
-- Excel dosyasından gider verisi yükleyin
-- Giderleri başlangıç-bitiş tarihine göre aylara dağıtır
-- "Ciroya dahil etme" ifadeleri filtrelenir
-- Aylık gider grafiği ve gider türü pasta grafiği
-- Firma ve yıl filtreleme desteği
+- İki firma: Etki Akademi ve Etki Osgb
+- Gelir / Gider ayrımı
+- Yıl ve ay bazlı veri seçimi
+- Excel (.xlsx) yükleme
 
-## Örnek Veri Dosyası
-`ornek_gider.xlsx` dosyası örnek gider yapısına sahiptir.
+## Kullanım
+1. `streamlit run streamlit_app.py`
+2. Web arayüzünden:
+   - Firma seçin
+   - Gelir/Gider seçin
+   - Ay seçin
+   - Excel dosyasını yükleyin
+
+Yüklenen veri ekranda görüntülenir ve istenirse toplam tutar gösterilir.
