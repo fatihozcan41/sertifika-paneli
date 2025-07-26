@@ -4,7 +4,6 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime
 import os
-import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 st.title("Firma Bütçe Takip ve Aylık Dağıtım Uygulaması")
@@ -87,35 +86,25 @@ if uploaded_file:
             df.to_csv(arsiv_yolu, index=False)
 
             st.success("Veri işlendi ve dağıtım tamamlandı.")
-            st.dataframe(birlesik_df)
 
             aylar_yil = [f"{ay} {datetime.now().year}" for ay in aylar_sirali]
-            pivot_df = birlesik_df.pivot_table(index="Hesap", columns="Ay", values="Tutar", aggfunc="sum").fillna(0)
-            pivot_df = pivot_df.reindex(columns=aylar_yil, fill_value=0).reset_index()
             st.subheader("Pivot Formatında Görünüm")
-            st.dataframe(pivot_df)
 
-            st.subheader("Firma Bazlı Grafikler")
-            for f in birlesik_df["Firma"].unique():
+            for f in ["Etki Akademi", "Etki Osgb"]:
                 st.markdown(f"### {f}")
-                firma_df = birlesik_df[birlesik_df["Firma"] == f]
-                gelirler = firma_df[firma_df["Tür"] == "Gelir"].groupby("Ay")["Tutar"].sum()
-                giderler = firma_df[firma_df["Tür"] == "Gider"].groupby("Ay")["Tutar"].sum()
-                aylar = sorted(set(gelirler.index).union(giderler.index))
-
-                fig, ax = plt.subplots()
-                ax.bar(aylar, gelirler.reindex(aylar, fill_value=0), label="Gelir", color="green")
-                ax.bar(aylar, -giderler.reindex(aylar, fill_value=0), label="Gider", color="red")
-                ax.set_ylabel("Tutar (TL)")
-                ax.set_title(f"{f} - Aylık Gelir/Gider Karşılaştırması")
-                ax.legend()
-                plt.xticks(rotation=45)
-                st.pyplot(fig)
+                f_df = birlesik_df[birlesik_df["Firma"] == f]
+                pivot_df = f_df.pivot_table(index="Hesap", columns="Ay", values="Tutar", aggfunc="sum").fillna(0)
+                pivot_df = pivot_df.reindex(columns=aylar_yil, fill_value=0).reset_index()
+                st.dataframe(pivot_df)
 
             buffer = BytesIO()
             with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
                 birlesik_df.to_excel(writer, index=False, sheet_name="Tüm Dağılım")
-                pivot_df.to_excel(writer, index=False, sheet_name="Pivot Dağılım")
+                for f in ["Etki Akademi", "Etki Osgb"]:
+                    f_df = birlesik_df[birlesik_df["Firma"] == f]
+                    pivot_df = f_df.pivot_table(index="Hesap", columns="Ay", values="Tutar", aggfunc="sum").fillna(0)
+                    pivot_df = pivot_df.reindex(columns=aylar_yil, fill_value=0).reset_index()
+                    pivot_df.to_excel(writer, index=False, sheet_name=f"{f[:30]} Pivot")
             st.download_button(label="Excel İndir (Tüm + Pivot)", data=buffer.getvalue(),
                                file_name="tum_aylik_dagilim_pivot.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         else:
