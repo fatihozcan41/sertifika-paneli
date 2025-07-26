@@ -20,7 +20,6 @@ aylar_sirali = [
 ]
 veri_cache_path = "veri_cache.csv"
 arsiv_klasoru = "arsiv"
-
 os.makedirs(arsiv_klasoru, exist_ok=True)
 
 def aylara_dagit(df, veri_giris_ayi):
@@ -72,11 +71,10 @@ if uploaded_file:
         # Mevcut veri varsa oku
         if os.path.exists(veri_cache_path):
             eski_df = pd.read_csv(veri_cache_path)
-            # Aynı Hesap+Firma+Veri Giriş Ayı olanları sil
+            # Aynı Firma, Tür ve Veri Giriş Ayı olan TÜM veriler silinir
             filtre = ~((eski_df["Firma"] == firma) & 
                        (eski_df["Tür"] == veri_tipi) &
-                       (eski_df["Veri Giriş Ayı"] == veri_giris_ayi) &
-                       (eski_df["Hesap"].isin(yeni_df["Hesap"].unique())))
+                       (eski_df["Veri Giriş Ayı"] == veri_giris_ayi))
             eski_df = eski_df[filtre]
             birlesik_df = pd.concat([eski_df, yeni_df], ignore_index=True)
         else:
@@ -88,7 +86,7 @@ if uploaded_file:
         arsiv_yolu = os.path.join(arsiv_klasoru, f"{firma}_{veri_giris_ayi}_{now_str}.csv")
         df.to_csv(arsiv_yolu, index=False)
 
-        st.success("Veri eklendi. Önceki aynı hesaplar güncellendi. Arşivlendi.")
+        st.success("Veri eklendi. Aynı ay-firma-tür için tüm önceki veriler silinip yenileri yüklendi.")
         st.dataframe(birlesik_df)
 
         # Pivot tablo
