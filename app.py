@@ -128,10 +128,10 @@ if os.path.exists(VERI_DOSYA):
         title="Gelir/Gider Karşılaştırması"
     )
     st.plotly_chart(grafik, use_container_width=True)
-else:
+    else:
     st.info("Henüz veri girişi yapılmamış.")
 
-elif secim == "Excel'den Yükle":
+    elif secim == "Excel'den Yükle":
     st.header("📤 Excel'den Gelir/Gider Yükleme")
 
     with st.form("excel_upload"):
