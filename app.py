@@ -1,8 +1,3 @@
-st.title("📘 Etki OSGB & Belgelendirme Gelir-Gider Takip Paneli")
-
-secim = st.selectbox("Nasıl devam etmek istersiniz?", ["Manuel Veri Girişi", "Excel'den Yükle", "Oran Tanımla", "Raporlama"])
-
-if secim == "Manuel Veri Girişi":
 
 # Yardımcı fonksiyon: Oran tanımı var mı?
 def oran_var_mi(h_ismi):
@@ -10,16 +5,15 @@ def oran_var_mi(h_ismi):
         return False
     oran_df = pd.read_csv(ORAN_DOSYA)
     return h_ismi in oran_df["hesap_ismi"].values
-import streamlit as st
-import pandas as pd
-from datetime import date
-import os
 
-st.set_page_config(page_title="Etki Gelir Gider Takibi", layout="wide")
-st.title("💼 Etki OSGB / Etki Belgelendirme Gelir Gider Takibi")
 
-VERI_DOSYA = "data/veriler.csv"
-ORAN_DOSYA = "data/oranlar.csv"
+st.title("📘 Etki OSGB & Belgelendirme Gelir-Gider Takip Paneli")
+
+secim = st.selectbox("Nasıl devam etmek istersiniz?", ["Manuel Veri Girişi", "Excel'den Yükle", "Oran Tanımla", "Raporlama"])
+
+if secim == "Manuel Veri Girişi":
+
+# Yardımcı fonksiyon: Oran tanımı var mı?
 
 # Giriş Paneli
 st.header("📥 Veri Girişi")
