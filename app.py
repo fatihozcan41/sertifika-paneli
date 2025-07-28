@@ -41,3 +41,43 @@ with st.form("veri_form"):
                 df = yeni
             df.to_csv(VERI_DOSYA, index=False)
             st.success("✅ Veri kaydedildi.")
+
+st.header("⚙️ Oran Tanımlama Paneli")
+
+oranlar_df = pd.read_csv(ORAN_DOSYA) if os.path.exists(ORAN_DOSYA) else pd.DataFrame(
+    columns=["hesap_ismi", "osgb", "belge", "egitim", "ilkyardim", "kalite", "uzmanlik"]
+)
+
+with st.form("oran_form"):
+    st.markdown("Ortak gider içeren bir *HESAP İSMİ* için oranları tanımlayın.")
+    hesap_ismi_input = st.text_input("Hesap İsmi (BELGE ORTAK GİDER ya da OSGB + BELGE ORTAK GİDER altında geçen)")
+    osgb_oran = st.slider("Etki OSGB Oranı (%)", 0, 100, 50)
+    belge_oran = 100 - osgb_oran
+
+    st.markdown(f"Etki Belgelendirme oranı: **{belge_oran}%** → alt kırılım:")
+    egitim = st.slider("EĞİTİM (%)", 0, belge_oran, 25)
+    ilkyardim = st.slider("İLKYARDIM (%)", 0, belge_oran - egitim, 25)
+    kalite = st.slider("KALİTE (%)", 0, belge_oran - egitim - ilkyardim, 25)
+    uzmanlik = belge_oran - egitim - ilkyardim - kalite
+    st.markdown(f"UZMANLIK: **{uzmanlik}%** (Otomatik hesaplandı)")
+
+    oran_gonder = st.form_submit_button("Oranı Kaydet")
+
+    if oran_gonder:
+        if not hesap_ismi_input:
+            st.warning("Hesap ismi girmelisiniz.")
+        else:
+            yeni_kayit = pd.DataFrame([{
+                "hesap_ismi": hesap_ismi_input,
+                "osgb": osgb_oran,
+                "belge": belge_oran,
+                "egitim": egitim,
+                "ilkyardim": ilkyardim,
+                "kalite": kalite,
+                "uzmanlik": uzmanlik
+            }])
+            # varsa eskiyi silip yeni kaydı ekle
+            oranlar_df = oranlar_df[oranlar_df["hesap_ismi"] != hesap_ismi_input]
+            oranlar_df = pd.concat([oranlar_df, yeni_kayit], ignore_index=True)
+            oranlar_df.to_csv(ORAN_DOSYA, index=False)
+            st.success("✅ Oran tanımı kaydedildi.")
