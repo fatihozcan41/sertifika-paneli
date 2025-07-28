@@ -19,7 +19,6 @@ if secim == "Manuel Veri Girişi":
     st.header("📥 Veri Girişi")
     with st.form("veri_form"):
     firma = st.selectbox("Firma Seçiniz", ["Etki OSGB", "Etki Belgelendirme"])
-    tur = st.radio("İşlem Türü", ["Gelir", "Gider"])
     ay = st.selectbox("Ay", ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"])
     tarih = st.date_input("Tarih", value=date.today())
     hesap_ismi = st.text_input("Hesap İsmi")
