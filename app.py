@@ -1,3 +1,10 @@
+
+# Yardımcı fonksiyon: Oran tanımı var mı?
+def oran_var_mi(h_ismi):
+    if not os.path.exists(ORAN_DOSYA):
+        return False
+    oran_df = pd.read_csv(ORAN_DOSYA)
+    return h_ismi in oran_df["hesap_ismi"].values
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -41,6 +48,8 @@ with st.form("veri_form"):
                 df = yeni
             df.to_csv(VERI_DOSYA, index=False)
             st.success("✅ Veri kaydedildi.")
+            if sorumluluk.strip().upper() in ["BELGE ORTAK GİDER", "OSGB + BELGE ORTAK GİDER"] and not oran_var_mi(hesap_ismi):
+                st.warning("⚠️ Bu HESAP İSMİ için tanımlı oran bulunamadı. Lütfen oran tanımlayın.")
 
 st.header("⚙️ Oran Tanımlama Paneli")
 
@@ -143,5 +152,14 @@ with st.form("excel_upload"):
                 birlesmis = pd.concat([mevcut_df, aktarim_df], ignore_index=True)
                 birlesmis.to_csv(VERI_DOSYA, index=False)
                 st.success("✅ Excel verileri başarıyla aktarıldı.")
+                # Oran kontrolü
+                ortak_satirlar = aktarim_df[
+                    aktarim_df["sorumluluk"].str.upper().isin(["BELGE ORTAK GİDER", "OSGB + BELGE ORTAK GİDER"])
+                ]
+                eksik_oranlar = ortak_satirlar[~ortak_satirlar["hesap_ismi"].isin(pd.read_csv(ORAN_DOSYA)["hesap_ismi"])]
+
+                if not eksik_oranlar.empty:
+                    st.warning("⚠️ Aşağıdaki HESAP İSMİ değerleri için oran tanımı yapılmamış:")
+                    st.dataframe(eksik_oranlar["hesap_ismi"].unique())
         except Exception as e:
             st.error(f"Hata oluştu: {e}")
