@@ -111,3 +111,37 @@ if os.path.exists(VERI_DOSYA):
     st.plotly_chart(grafik, use_container_width=True)
 else:
     st.info("Henüz veri girişi yapılmamış.")
+
+st.header("📤 Excel'den Gelir/Gider Yükleme")
+
+with st.form("excel_upload"):
+    st.markdown("Hazır Excel dosyasından toplu veri yüklemek için kullanılır.")
+    yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"], key="firma_upload")
+    yuklenecek_tur = st.radio("İşlem Türü", ["Gelir", "Gider"], key="tur_upload")
+    yuklenecek_ay = st.selectbox("Ay", ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"], key="ay_upload")
+    excel_dosyasi = st.file_uploader("Excel Dosyasını Yükleyin", type=["xlsx", "xls"])
+    yukle_btn = st.form_submit_button("Verileri Aktar")
+
+    if yukle_btn and excel_dosyasi:
+        try:
+            yuklenen_df = pd.read_excel(excel_dosyasi)
+            beklenen_kolonlar = ["TARİH", "HESAP İSMİ", "ANA DÖVİZ BORÇ", "SORUMLULUK MERKEZİ İSMİ"]
+            if not all(k in yuklenen_df.columns for k in beklenen_kolonlar):
+                st.error("❌ Excel dosyası beklenen başlıklara sahip değil.")
+            else:
+                aktarim_df = pd.DataFrame({
+                    "firma": yuklenecek_firma,
+                    "tur": yuklenecek_tur,
+                    "ay": yuklenecek_ay,
+                    "tarih": yuklenen_df["TARİH"],
+                    "hesap_ismi": yuklenen_df["HESAP İSMİ"],
+                    "tutar": yuklenen_df["ANA DÖVİZ BORÇ"],
+                    "sorumluluk": yuklenen_df["SORUMLULUK MERKEZİ İSMİ"]
+                })
+
+                mevcut_df = pd.read_csv(VERI_DOSYA) if os.path.exists(VERI_DOSYA) else pd.DataFrame()
+                birlesmis = pd.concat([mevcut_df, aktarim_df], ignore_index=True)
+                birlesmis.to_csv(VERI_DOSYA, index=False)
+                st.success("✅ Excel verileri başarıyla aktarıldı.")
+        except Exception as e:
+            st.error(f"Hata oluştu: {e}")
