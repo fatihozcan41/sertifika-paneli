@@ -81,3 +81,33 @@ with st.form("oran_form"):
             oranlar_df = pd.concat([oranlar_df, yeni_kayit], ignore_index=True)
             oranlar_df.to_csv(ORAN_DOSYA, index=False)
             st.success("✅ Oran tanımı kaydedildi.")
+
+st.header("📊 Raporlama Paneli")
+
+if os.path.exists(VERI_DOSYA):
+    df = pd.read_csv(VERI_DOSYA)
+
+    with st.expander("🔍 Filtreleme Seçenekleri", expanded=True):
+        firma_filtresi = st.multiselect("Firma", df["firma"].unique(), default=df["firma"].unique())
+        ay_filtresi = st.multiselect("Ay", df["ay"].unique(), default=df["ay"].unique())
+        tur_filtresi = st.multiselect("Tür", df["tur"].unique(), default=df["tur"].unique())
+
+    filtreli = df[
+        (df["firma"].isin(firma_filtresi)) &
+        (df["ay"].isin(ay_filtresi)) &
+        (df["tur"].isin(tur_filtresi))
+    ]
+
+    toplamlar = filtreli.groupby(["firma", "tur", "ay"])["tutar"].sum().reset_index()
+    st.dataframe(toplamlar, use_container_width=True)
+
+    import plotly.express as px
+    grafik = px.bar(
+        toplamlar,
+        x="ay", y="tutar", color="tur",
+        barmode="group", facet_col="firma",
+        title="Gelir/Gider Karşılaştırması"
+    )
+    st.plotly_chart(grafik, use_container_width=True)
+else:
+    st.info("Henüz veri girişi yapılmamış.")
