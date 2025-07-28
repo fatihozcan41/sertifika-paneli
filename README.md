@@ -1,16 +1,10 @@
-# Firma Bütçe Takip Sistemi (v1)
+# Firma Bütçe Takip Uygulaması
 
-Bu prototip, Etki OSGB ve Etki Belgelendirme firmalarının aylık gelir/gider takibini yapmaya yönelik hazırlanmıştır.
+## Kurulum
+```bash
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
 
-## Özellikler
-- Firma seçimi
-- Veri tipi (Gelir / Gider)
-- Ay seçimi
-- Excel yükleme ve sayfa seçimi
-- Hazırlık aşamasında oran yönetimi ve aylık dağılım
-
-## Geliştirilecekler
-- Otomatik dağılım hesaplama
-- Oran giriş paneli
-- Geri alma mekanizması
-- Pivot & grafikler
+## Açıklama
+Etki OSGB ve Etki Belgelendirme firmalarının gelir/gider takibi ve dağılımı için kullanılacak arayüz.
