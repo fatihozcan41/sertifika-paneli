@@ -7,9 +7,9 @@ def oran_var_mi(h_ismi):
     return h_ismi in oran_df["hesap_ismi"].values
 
 
-st.title("📘 Etki OSGB & Belgelendirme Gelir-Gider Takip Paneli")
+    st.title("📘 Etki OSGB & Belgelendirme Gelir-Gider Takip Paneli")
 
-secim = st.selectbox("Nasıl devam etmek istersiniz?", ["Manuel Veri Girişi", "Excel'den Yükle", "Oran Tanımla", "Raporlama"])
+    secim = st.selectbox("Nasıl devam etmek istersiniz?", ["Manuel Veri Girişi", "Excel'den Yükle", "Oran Tanımla", "Raporlama"])
 
 if secim == "Manuel Veri Girişi":
     
