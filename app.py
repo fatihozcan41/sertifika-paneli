@@ -12,7 +12,7 @@ st.title("📘 Etki OSGB & Belgelendirme Gelir-Gider Takip Paneli")
 secim = st.selectbox("Nasıl devam etmek istersiniz?", ["Manuel Veri Girişi", "Excel'den Yükle", "Oran Tanımla", "Raporlama"])
 
 if secim == "Manuel Veri Girişi":
-
+    
 # Yardımcı fonksiyon: Oran tanımı var mı?
 
 # Giriş Paneli
