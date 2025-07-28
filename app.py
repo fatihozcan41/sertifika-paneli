@@ -1,3 +1,8 @@
+st.title("📘 Etki OSGB & Belgelendirme Gelir-Gider Takip Paneli")
+
+secim = st.selectbox("Nasıl devam etmek istersiniz?", ["Manuel Veri Girişi", "Excel'den Yükle", "Oran Tanımla", "Raporlama"])
+
+if secim == "Manuel Veri Girişi":
 
 # Yardımcı fonksiyon: Oran tanımı var mı?
 def oran_var_mi(h_ismi):
@@ -51,7 +56,8 @@ with st.form("veri_form"):
             if sorumluluk.strip().upper() in ["BELGE ORTAK GİDER", "OSGB + BELGE ORTAK GİDER"] and not oran_var_mi(hesap_ismi):
                 st.warning("⚠️ Bu HESAP İSMİ için tanımlı oran bulunamadı. Lütfen oran tanımlayın.")
 
-st.header("⚙️ Oran Tanımlama Paneli")
+elif secim == "Oran Tanımla":
+    st.header("⚙️ Oran Tanımlama Paneli")
 
 oranlar_df = pd.read_csv(ORAN_DOSYA) if os.path.exists(ORAN_DOSYA) else pd.DataFrame(
     columns=["hesap_ismi", "osgb", "belge", "egitim", "ilkyardim", "kalite", "uzmanlik"]
@@ -60,7 +66,16 @@ oranlar_df = pd.read_csv(ORAN_DOSYA) if os.path.exists(ORAN_DOSYA) else pd.DataF
 with st.form("oran_form"):
     st.markdown("Ortak gider içeren bir *HESAP İSMİ* için oranları tanımlayın.")
     hesap_ismi_input = st.text_input("Hesap İsmi (BELGE ORTAK GİDER ya da OSGB + BELGE ORTAK GİDER altında geçen)")
-    osgb_oran = st.slider("Etki OSGB Oranı (%)", 0, 100, 50)
+        osgb_oran = st.number_input("Etki OSGB Oranı (%)", min_value=0, max_value=100, value=50)
+    belge_oran = 100 - osgb_oran
+
+    st.markdown(f"Etki Belgelendirme oranı: **{belge_oran}%** → alt kırılım (toplamı {belge_oran} olmalı):")
+    egitim = st.number_input("EĞİTİM (%)", min_value=0, max_value=belge_oran, value=25)
+    ilkyardim = st.number_input("İLKYARDIM (%)", min_value=0, max_value=belge_oran, value=25)
+    kalite = st.number_input("KALİTE (%)", min_value=0, max_value=belge_oran, value=25)
+    uzmanlik = belge_oran - egitim - ilkyardim - kalite
+    st.markdown(f"UZMANLIK: **{uzmanlik}%** (Otomatik hesaplandı)")
+("Etki OSGB Oranı (%)", 0, 100, 50)
     belge_oran = 100 - osgb_oran
 
     st.markdown(f"Etki Belgelendirme oranı: **{belge_oran}%** → alt kırılım:")
@@ -91,7 +106,8 @@ with st.form("oran_form"):
             oranlar_df.to_csv(ORAN_DOSYA, index=False)
             st.success("✅ Oran tanımı kaydedildi.")
 
-st.header("📊 Raporlama Paneli")
+elif secim == "Raporlama":
+    st.header("📊 Raporlama Paneli")
 
 if os.path.exists(VERI_DOSYA):
     df = pd.read_csv(VERI_DOSYA)
@@ -121,7 +137,8 @@ if os.path.exists(VERI_DOSYA):
 else:
     st.info("Henüz veri girişi yapılmamış.")
 
-st.header("📤 Excel'den Gelir/Gider Yükleme")
+elif secim == "Excel'den Yükle":
+    st.header("📤 Excel'den Gelir/Gider Yükleme")
 
 with st.form("excel_upload"):
     st.markdown("Hazır Excel dosyasından toplu veri yüklemek için kullanılır.")
