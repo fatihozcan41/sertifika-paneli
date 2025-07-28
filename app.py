@@ -13,11 +13,11 @@ secim = st.selectbox("Nasıl devam etmek istersiniz?", ["Manuel Veri Girişi", "
 
 if secim == "Manuel Veri Girişi":
     
-# Yardımcı fonksiyon: Oran tanımı var mı?
+    # Yardımcı fonksiyon: Oran tanımı var mı?
 
-# Giriş Paneli
-st.header("📥 Veri Girişi")
-with st.form("veri_form"):
+    # Giriş Paneli
+    st.header("📥 Veri Girişi")
+    with st.form("veri_form"):
     firma = st.selectbox("Firma Seçiniz", ["Etki OSGB", "Etki Belgelendirme"])
     tur = st.radio("İşlem Türü", ["Gelir", "Gider"])
     ay = st.selectbox("Ay", ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"])
@@ -53,11 +53,11 @@ with st.form("veri_form"):
 elif secim == "Oran Tanımla":
     st.header("⚙️ Oran Tanımlama Paneli")
 
-oranlar_df = pd.read_csv(ORAN_DOSYA) if os.path.exists(ORAN_DOSYA) else pd.DataFrame(
+    oranlar_df = pd.read_csv(ORAN_DOSYA) if os.path.exists(ORAN_DOSYA) else pd.DataFrame(
     columns=["hesap_ismi", "osgb", "belge", "egitim", "ilkyardim", "kalite", "uzmanlik"]
-)
+    )
 
-with st.form("oran_form"):
+    with st.form("oran_form"):
     st.markdown("Ortak gider içeren bir *HESAP İSMİ* için oranları tanımlayın.")
     hesap_ismi_input = st.text_input("Hesap İsmi (BELGE ORTAK GİDER ya da OSGB + BELGE ORTAK GİDER altında geçen)")
         osgb_oran = st.number_input("Etki OSGB Oranı (%)", min_value=0, max_value=100, value=50)
@@ -69,7 +69,7 @@ with st.form("oran_form"):
     kalite = st.number_input("KALİTE (%)", min_value=0, max_value=belge_oran, value=25)
     uzmanlik = belge_oran - egitim - ilkyardim - kalite
     st.markdown(f"UZMANLIK: **{uzmanlik}%** (Otomatik hesaplandı)")
-("Etki OSGB Oranı (%)", 0, 100, 50)
+    ("Etki OSGB Oranı (%)", 0, 100, 50)
     belge_oran = 100 - osgb_oran
 
     st.markdown(f"Etki Belgelendirme oranı: **{belge_oran}%** → alt kırılım:")
@@ -134,7 +134,7 @@ else:
 elif secim == "Excel'den Yükle":
     st.header("📤 Excel'den Gelir/Gider Yükleme")
 
-with st.form("excel_upload"):
+    with st.form("excel_upload"):
     st.markdown("Hazır Excel dosyasından toplu veri yüklemek için kullanılır.")
     yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"], key="firma_upload")
     yuklenecek_tur = st.radio("İşlem Türü", ["Gelir", "Gider"], key="tur_upload")
