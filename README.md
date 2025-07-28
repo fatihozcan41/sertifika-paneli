@@ -1,3 +1,15 @@
-# Firma Bütçe Takip Sistemi v25
+# Sertifika Paneli (Temiz Başlangıç)
 
-Kullanım talimatları burada yer alacaktır.
+Bu repo, sıfırdan başlamak isteyenler için sade bir yapı sunar:
+
+## İçerik
+- `app.py` : Streamlit arayüzü
+- `requirements.txt` : Gerekli kütüphaneler
+- `veriler.csv` : Giriş verileri (boş)
+- `oranlar.csv` : Oran tanımları (boş)
+
+## Başlatmak için
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
