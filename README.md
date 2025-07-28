@@ -1,2 +1,3 @@
-## Firma Bütçe Takip
-Bu uygulama Streamlit ile çalışır.
+# Firma Bütçe Takip Sistemi v25
+
+Kullanım talimatları burada yer alacaktır.
