@@ -1,12 +1,6 @@
-# Etki OSGB / Belgelendirme Gelir Gider Takip Sistemi
+# Etki OSGB & Belgelendirme Gelir-Gider Takip Sistemi
 
-Bu uygulama, Etki OSGB ve Etki Belgelendirme firmaları için gelir-gider takibi yapmak amacıyla geliştirilmiştir.
-
-## İçerik
-- `app.py`: Streamlit uygulaması
-- `data/veriler.csv`: Gelir/Gider kayıtları
-- `data/oranlar.csv`: Oran tanımları
-- `requirements.txt`: Gerekli Python paketleri
+Bu proje Streamlit tabanlıdır ve manuel veri girişi, Excel yükleme, oran tanımlama ve raporlama modüllerini içerir.
 
 ## Kurulum
 ```bash
