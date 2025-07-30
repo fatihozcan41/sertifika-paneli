@@ -1,6 +1,6 @@
-# Etki OSGB & Belgelendirme Gelir-Gider Takip Sistemi
+# Etki OSGB & Belgelendirme Gelir-Gider Takip Sistemi (v18)
 
-Bu proje Streamlit tabanlıdır ve manuel veri girişi, Excel yükleme, oran tanımlama ve raporlama modüllerini içerir.
+Bu proje Streamlit tabanlıdır ve manuel veri girişi, Excel yükleme, oran tanımlama (validasyonlu) ve raporlama modüllerini içerir.
 
 ## Kurulum
 ```bash

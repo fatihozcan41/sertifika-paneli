@@ -36,7 +36,6 @@ if secim == "Manuel Veri Girişi":
             if not hesap_ismi:
                 st.warning("Hesap ismi girilmelidir.")
             else:
-                # Oran kontrolü
                 if sorumluluk.strip().upper() in ["BELGE ORTAK GİDER", "OSGB + BELGE ORTAK GİDER"] and not oran_var_mi(hesap_ismi):
                     st.warning("⚠️ Bu HESAP İSMİ için tanımlı oran bulunamadı. Lütfen oran tanımlayın.")
                 yeni = pd.DataFrame([{
@@ -79,11 +78,9 @@ elif secim == "Excel'den Yükle":
                         "tutar": yuklenen_df["ANA DÖVİZ BORÇ"],
                         "sorumluluk": yuklenen_df["SORUMLULUK MERKEZİ İSMİ"]
                     })
-                    # Oran kontrolü
                     ortak_satirlar = aktarim_df[aktarim_df["sorumluluk"].str.upper().isin(["BELGE ORTAK GİDER","OSGB + BELGE ORTAK GİDER"])]
                     oran_df = pd.read_csv(ORAN_DOSYA)
                     eksik_oranlar = ortak_satirlar[~ortak_satirlar["hesap_ismi"].isin(oran_df["hesap_ismi"])]
-
                     if not eksik_oranlar.empty:
                         st.warning("⚠️ Aşağıdaki HESAP İSMİ değerleri için oran tanımı yapılmamış:")
                         st.dataframe(eksik_oranlar["hesap_ismi"].unique())
@@ -97,27 +94,20 @@ elif secim == "Excel'den Yükle":
 
 # -------------------- Oran Tanımlama --------------------
 elif secim == "Oran Tanımla":
-
     st.header("⚙️ Oran Tanımlama Paneli")
     oranlar_df = pd.read_csv(ORAN_DOSYA)
 
     st.subheader("📝 Mevcut Oranları Düzenle / Yeni Ekle veya Sil")
-    edited_df = st.data_editor(
-        oranlar_df, 
-        num_rows="dynamic", 
-        use_container_width=True
-    )
+    edited_df = st.data_editor(oranlar_df, num_rows="dynamic", use_container_width=True)
     if st.button("💾 Değişiklikleri Kaydet"):
         hatali_satirlar = []
         for idx, row in edited_df.iterrows():
-            # 1. OSGB + Belge = 100 mü?
-            if (row['osgb'] + row['belge']) != 100:
+            if abs((row['osgb'] + row['belge']) - 100) > 0.001:
                 hatali_satirlar.append(f"Satır {idx+1}: OSGB + Belge toplamı 100 olmalı.")
                 continue
-            # 2. Alt dağılım toplamı = Belge oranı mı?
-            if (row['egitim'] + row['ilkyardim'] + row['kalite'] + row['uzmanlik']) != row['belge']:
+            if abs((row['egitim'] + row['ilkyardim'] + row['kalite'] + row['uzmanlik']) - row['belge']) > 0.001:
                 hatali_satirlar.append(f"Satır {idx+1}: Alt dağılım toplamı Belge oranına eşit olmalı.")
-        
+
         if hatali_satirlar:
             for hata in hatali_satirlar:
                 st.error(hata)
@@ -126,6 +116,7 @@ elif secim == "Oran Tanımla":
             edited_df.to_csv(ORAN_DOSYA, index=False)
             st.success("Oranlar başarıyla güncellendi.")
 
+# -------------------- Raporlama --------------------
 elif secim == "Raporlama":
     st.header("📊 Raporlama Paneli")
     if os.path.exists(VERI_DOSYA):
