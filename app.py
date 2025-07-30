@@ -13,16 +13,24 @@ def kontrol_oranlar_yukleme(df):
     for idx, row in df.iterrows():
         sorumluluk = str(row.get("SORUMLULUK MERKEZİ İSMİ", "")).strip()
         hesap = str(row.get("HESAP İSMİ", "")).strip()
-        if ay_listesi and len(ay_listesi) > 0:
+        
+if ay_listesi and len(ay_listesi) > 0:
     tutar_aylik = toplam_tutar / len(ay_listesi)
+else:
+    st.warning("⚠️ Başlangıç ve Bitiş aralığında ay bulunamadı. Tutar tek seferde listelendi.")
+    tutar_aylik = toplam_tutar
 else:
     st.warning("⚠️ Başlangıç ve Bitiş aralığında ay bulunamadı. Tutar tek seferde listelendi.")
     tutar_aylik = toplam_tutar
             else:
                 tutar_aylik = tutar
             for ay in ay_listesi:
-                firma = "Etki OSGB" if ay_listesi and len(ay_listesi) > 0:
+                firma = "Etki OSGB" 
+if ay_listesi and len(ay_listesi) > 0:
     tutar_aylik = toplam_tutar / len(ay_listesi)
+else:
+    st.warning("⚠️ Başlangıç ve Bitiş aralığında ay bulunamadı. Tutar tek seferde listelendi.")
+    tutar_aylik = toplam_tutar
 else:
     st.warning("⚠️ Başlangıç ve Bitiş aralığında ay bulunamadı. Tutar tek seferde listelendi.")
     tutar_aylik = toplam_tutar
