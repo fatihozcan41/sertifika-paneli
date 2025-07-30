@@ -130,17 +130,25 @@ elif secim == "Oran Tanımla":
                 oranlar_df = pd.concat([oranlar_df, yeni_kayit], ignore_index=True)
                 oranlar_df.to_csv(ORAN_DOSYA, index=False)
                 st.success("✅ Oran tanımı kaydedildi.")
-
     st.markdown("---")
-    st.subheader("📝 Mevcut Oranları Düzenle")
+    st.subheader("📝 Mevcut Oranları Düzenle / Yeni Ekle veya Sil")
 
     if not oranlar_df.empty:
-        edited_df = st.data_editor(oranlar_df, num_rows="dynamic", use_container_width=True)
+        edited_df = st.data_editor(
+            oranlar_df, 
+            num_rows="dynamic", 
+            use_container_width=True
+        )
         if st.button("💾 Değişiklikleri Kaydet"):
             edited_df.to_csv(ORAN_DOSYA, index=False)
             st.success("Oranlar başarıyla güncellendi.")
     else:
         st.info("Henüz tanımlanmış oran bulunmamaktadır.")
+        empty_df = pd.DataFrame(columns=oranlar_df.columns)
+        new_df = st.data_editor(empty_df, num_rows="dynamic", use_container_width=True)
+        if st.button("💾 Yeni Oranları Kaydet"):
+            new_df.to_csv(ORAN_DOSYA, index=False)
+            st.success("Yeni oranlar başarıyla kaydedildi.")
 
 
 # -------------------- Raporlama --------------------
