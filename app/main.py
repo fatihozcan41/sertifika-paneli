@@ -1,25 +1,41 @@
 
-# v46 main uygulama dosyası
-# 'Bu dosya zaten yüklenmiş' uyarısı ve tüm kontrol mekanizmaları tamamen kaldırıldı.
+# v47 main uygulama dosyası
+# Frontend ve backend entegre: uploader resetleniyor, 'zaten yüklenmiş' uyarısı kaldırıldı.
 
 import os
 import shutil
+import streamlit as st
+
+# Reset için session key
+if "reset_key" not in st.session_state:
+    st.session_state.reset_key = 0
 
 def tum_verileri_sifirla():
-    print("Tüm veriler ve session state temizleniyor...")
-    # Data klasörünü temizle
+    # Backend temizliği
     if os.path.exists("data"):
         shutil.rmtree("data")
         os.makedirs("data", exist_ok=True)
+    # Frontend reset
+    st.session_state.reset_key += 1
+    st.session_state.clear()
+    st.success("Tüm veriler ve yükleme listesi sıfırlandı.")
 
-    # Streamlit state temizliği (varsa)
-    try:
-        import streamlit as st
-        st.session_state.clear()
-        print("Streamlit session_state temizlendi.")
-    except:
-        print("Streamlit modülü yok veya session_state kullanılmıyor.")
+def excel_yukle():
+    uploaded_file = st.file_uploader(
+        "Excel Dosyasını Seçin", 
+        type=["xls", "xlsx"], 
+        key=st.session_state.reset_key
+    )
+    if uploaded_file is not None:
+        st.success(f"{uploaded_file.name} başarıyla yüklendi.")
+        # Burada dosya işleme logic'i
+        return uploaded_file
 
-def excel_yukle(file_path):
-    # Artık hiçbir kontrol yapılmıyor, her dosya yüklenebilir
-    print(f"{file_path} başarıyla yüklendi. (Kontrol yapılmadı)")
+# UI
+st.title("Yüklenen Dosyalar")
+if st.button("Tüm Verileri Sıfırla"):
+    tum_verileri_sifirla()
+
+file = excel_yukle()
+if file:
+    st.write("Dosya işleniyor...")
