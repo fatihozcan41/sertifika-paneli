@@ -179,7 +179,7 @@ if secim == "Excel'den Yükle":
             else:
                 ay_listesi = [aylar.index(row["ay"]) + 1]
 
-            tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar  # Başlangıç ve Bitiş arası ay sayısına böl
+            tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
             oran = oran_bul(hesap)
 
             for ay_no in ay_listesi:
