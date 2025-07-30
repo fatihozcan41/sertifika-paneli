@@ -97,61 +97,20 @@ elif secim == "Excel'den Yükle":
 
 # -------------------- Oran Tanımlama --------------------
 elif secim == "Oran Tanımla":
+
     st.header("⚙️ Oran Tanımlama Paneli")
     oranlar_df = pd.read_csv(ORAN_DOSYA)
 
-    with st.form("oran_form"):
-        hesap_ismi_input = st.text_input("Hesap İsmi (BELGE ORTAK GİDER veya OSGB + BELGE ORTAK GİDER altında geçen)")
-        osgb_oran = st.number_input("Etki OSGB Oranı (%)", min_value=0, max_value=100, value=50)
-        belge_oran = 100 - osgb_oran
-        st.caption(f"Etki Belgelendirme oranı: {belge_oran}% (Alt kırılımlar toplamı {belge_oran} olmalı)")
-        egitim = st.number_input("EĞİTİM (%)", min_value=0, max_value=belge_oran, value=25)
-        ilkyardim = st.number_input("İLKYARDIM (%)", min_value=0, max_value=belge_oran, value=25)
-        kalite = st.number_input("KALİTE (%)", min_value=0, max_value=belge_oran, value=25)
-        uzmanlik = belge_oran - egitim - ilkyardim - kalite
-        st.caption(f"UZMANLIK: {uzmanlik}% (Otomatik hesaplandı)")
-
-        oran_gonder = st.form_submit_button("Oranı Kaydet")
-
-        if oran_gonder:
-            if not hesap_ismi_input:
-                st.warning("Hesap ismi girilmelidir.")
-            else:
-                yeni_kayit = pd.DataFrame([{
-                    "hesap_ismi": hesap_ismi_input,
-                    "osgb": osgb_oran,
-                    "belge": belge_oran,
-                    "egitim": egitim,
-                    "ilkyardim": ilkyardim,
-                    "kalite": kalite,
-                    "uzmanlik": uzmanlik
-                }])
-                oranlar_df = oranlar_df[oranlar_df["hesap_ismi"] != hesap_ismi_input]
-                oranlar_df = pd.concat([oranlar_df, yeni_kayit], ignore_index=True)
-                oranlar_df.to_csv(ORAN_DOSYA, index=False)
-                st.success("✅ Oran tanımı kaydedildi.")
-    st.markdown("---")
     st.subheader("📝 Mevcut Oranları Düzenle / Yeni Ekle veya Sil")
+    edited_df = st.data_editor(
+        oranlar_df, 
+        num_rows="dynamic", 
+        use_container_width=True
+    )
+    if st.button("💾 Değişiklikleri Kaydet"):
+        edited_df.to_csv(ORAN_DOSYA, index=False)
+        st.success("Oranlar başarıyla güncellendi.")
 
-    if not oranlar_df.empty:
-        edited_df = st.data_editor(
-            oranlar_df, 
-            num_rows="dynamic", 
-            use_container_width=True
-        )
-        if st.button("💾 Değişiklikleri Kaydet"):
-            edited_df.to_csv(ORAN_DOSYA, index=False)
-            st.success("Oranlar başarıyla güncellendi.")
-    else:
-        st.info("Henüz tanımlanmış oran bulunmamaktadır.")
-        empty_df = pd.DataFrame(columns=oranlar_df.columns)
-        new_df = st.data_editor(empty_df, num_rows="dynamic", use_container_width=True)
-        if st.button("💾 Yeni Oranları Kaydet"):
-            new_df.to_csv(ORAN_DOSYA, index=False)
-            st.success("Yeni oranlar başarıyla kaydedildi.")
-
-
-# -------------------- Raporlama --------------------
 elif secim == "Raporlama":
     st.header("📊 Raporlama Paneli")
     if os.path.exists(VERI_DOSYA):
