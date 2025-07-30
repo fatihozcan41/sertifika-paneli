@@ -33,8 +33,8 @@ def uygula_oranlama(df, oran_df):
         hesap = str(row.get("HESAP İSMİ", "")).strip()
         sorumluluk = str(row.get("SORUMLULUK MERKEZİ İSMİ", "")).strip()
         tutar = float(row.get("TUTAR", 0))
-        bas_tarih = pd.to_datetime(row.get("Başlangıç"))
-        bit_tarih = pd.to_datetime(row.get("Bitiş"))
+        bas_tarih = pd.to_datetime(row.get("Başlangıç"), format="%b.%y")
+        bit_tarih = pd.to_datetime(row.get("Bitiş"), format="%b.%y")
         oran = oran_bul(hesap)
 
         if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
@@ -148,7 +148,11 @@ if secim == "Excel'den Yükle":
             else:
                 ay_listesi = [aylar.index(row["ay"]) + 1]
 
-            tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
+            if ay_listesi and len(ay_listesi) > 0:
+    tutar_aylik = toplam_tutar / len(ay_listesi)
+else:
+    st.warning("⚠️ Başlangıç ve Bitiş arasında ay bulunamadı. Tutar tek seferde listelendi.")
+    tutar_aylik = toplam_tutar
             oran = oran_bul(hesap)
 
             for ay_no in ay_listesi:
