@@ -102,10 +102,16 @@ elif secim == "Oran Tanımla":
     if st.button("💾 Değişiklikleri Kaydet"):
         hatali_satirlar = []
         for idx, row in edited_df.iterrows():
-            if abs((row['osgb'] + row['belge']) - 100) > 0.001:
+            osgb = float(row.get('osgb', 0) or 0)
+            belge = float(row.get('belge', 0) or 0)
+            egitim = float(row.get('egitim', 0) or 0)
+            ilkyardim = float(row.get('ilkyardim', 0) or 0)
+            kalite = float(row.get('kalite', 0) or 0)
+            uzmanlik = float(row.get('uzmanlik', 0) or 0)
+            if abs((osgb + belge) - 100) > 0.001:
                 hatali_satirlar.append(f"Satır {idx+1}: OSGB + Belge toplamı 100 olmalı.")
                 continue
-            if abs((row['egitim'] + row['ilkyardim'] + row['kalite'] + row['uzmanlik']) - row['belge']) > 0.001:
+            if abs((egitim + ilkyardim + kalite + uzmanlik) - belge) > 0.001:
                 hatali_satirlar.append(f"Satır {idx+1}: Alt dağılım toplamı Belge oranına eşit olmalı.")
 
         if hatali_satirlar:
