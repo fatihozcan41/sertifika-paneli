@@ -34,6 +34,15 @@ secim = st.selectbox("Modül Seçiniz", ["Excel'den Yükle", "Oran Tanımla"])
 if secim == "Excel'den Yükle":
     st.header("📤 Excel'den Gelir/Gider Yükleme")
 
+    # Sıfırlama butonu
+    if st.button("🗑️ Tüm Verileri Sıfırla"):
+        if os.path.exists(VERI_DOSYA):
+            os.remove(VERI_DOSYA)
+        if os.path.exists(DOSYA_LISTESI):
+            os.remove(DOSYA_LISTESI)
+        st.success("Tüm veriler sıfırlandı.")
+        st.rerun()
+
     if not os.path.exists(DOSYA_LISTESI):
         pd.DataFrame(columns=["dosya"]).to_csv(DOSYA_LISTESI, index=False)
 
@@ -65,9 +74,12 @@ if secim == "Excel'den Yükle":
     if st.session_state.get("degistirme_modu", False):
         eski_dosya = st.session_state.get("degistirilecek_dosya")
         st.subheader(f"🔄 '{eski_dosya}' dosyasını değiştir")
-        yeni_dosya = st.file_uploader("Yeni dosyayı seçin", type=["xlsx","xls"], key="degistirme")
+        col1, col2 = st.columns([3,1])
+        yeni_dosya = col1.file_uploader("Yeni dosyayı seçin", type=["xlsx","xls"], key="degistirme")
+        if col2.button("Vazgeç"):
+            st.session_state["degistirme_modu"] = False
+            st.rerun()
         if yeni_dosya:
-            # Eski kayıtları temizle
             dosya_listesi = dosya_listesi[dosya_listesi["dosya"] != eski_dosya]
             dosya_listesi = pd.concat([dosya_listesi, pd.DataFrame([[yeni_dosya.name]], columns=["dosya"])], ignore_index=True)
             dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
@@ -75,14 +87,12 @@ if secim == "Excel'den Yükle":
             veri_df = pd.read_csv(VERI_DOSYA)
             eski_kayitlar = veri_df[veri_df["kaynak_dosya"] == eski_dosya]
 
-            # Eski dosyanın firma ve ay bilgisi korunacak
+            # Eski dosyanın bilgileri
             firma_bilgi = eski_kayitlar["firma"].iloc[0] if not eski_kayitlar.empty else "Etki OSGB"
             ay_bilgi = eski_kayitlar["ay"].iloc[0] if not eski_kayitlar.empty else "Haziran"
+            tur_bilgi = eski_kayitlar["tur"].iloc[0] if not eski_kayitlar.empty else "Gider"
 
-            # Eski kayıtları sil
             veri_df = veri_df[veri_df["kaynak_dosya"] != eski_dosya]
-
-            # Yeni dosyayı işle
             yeni_df = pd.read_excel(yeni_dosya)
             bas_col = "Gider Başlangıç" if "Gider Başlangıç" in yeni_df.columns else "Başlangıç"
             bit_col = "Gider Bitiş Tarihi" if "Gider Bitiş Tarihi" in yeni_df.columns else "Bitiş"
@@ -91,6 +101,7 @@ if secim == "Excel'den Yükle":
                 yeni_kayit = {
                     "firma": firma_bilgi,
                     "ay": ay_bilgi,
+                    "tur": tur_bilgi,
                     "HESAP İSMİ": r["HESAP İSMİ"],
                     "ANA DÖVİZ BORÇ": r["ANA DÖVİZ BORÇ"],
                     "SORUMLULUK MERKEZİ İSMİ": r["SORUMLULUK MERKEZİ İSMİ"],
@@ -107,10 +118,11 @@ if secim == "Excel'den Yükle":
 
     yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"])
     secilen_ay = st.selectbox("Hangi Ay İçin?", aylar)
+    yuklenecek_tur = st.selectbox("Gider mi Gelir mi?", ["Gider", "Gelir"])
     excel_dosyasi = st.file_uploader("Excel Dosyasını Seçin", type=["xlsx","xls"], key="yeni_yukleme")
 
     if not os.path.exists(VERI_DOSYA):
-        pd.DataFrame(columns=["firma","ay","HESAP İSMİ","ANA DÖVİZ BORÇ",
+        pd.DataFrame(columns=["firma","ay","tur","HESAP İSMİ","ANA DÖVİZ BORÇ",
                               "SORUMLULUK MERKEZİ İSMİ","bas","bit","kaynak_dosya"]).to_csv(VERI_DOSYA, index=False)
 
     if excel_dosyasi:
@@ -130,6 +142,7 @@ if secim == "Excel'den Yükle":
                 yeni_kayit = {
                     "firma": yuklenecek_firma,
                     "ay": secilen_ay,
+                    "tur": yuklenecek_tur,
                     "HESAP İSMİ": hesap_ismi,
                     "ANA DÖVİZ BORÇ": row["ANA DÖVİZ BORÇ"],
                     "SORUMLULUK MERKEZİ İSMİ": row["SORUMLULUK MERKEZİ İSMİ"],
