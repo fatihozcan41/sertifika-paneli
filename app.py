@@ -44,6 +44,49 @@ def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
     return belge_alt, ay_sayisi
 # -------------------------------------------------------
 
+
+# ---------------- Oranlama Mantığı ----------------
+def uygula_oranlama(df, oran_df):
+    konsolide_sonuc = []
+
+    for idx, row in df.iterrows():
+        hesap = str(row.get("HESAP İSMİ", "")).strip()
+        sorumluluk = str(row.get("SORUMLULUK MERKEZİ İSMİ", "")).strip()
+        tutar = float(row.get("TUTAR", 0))
+        bas_tarih = pd.to_datetime(row.get("Başlangıç"))
+        bit_tarih = pd.to_datetime(row.get("Bitiş"))
+        oran = oran_bul(hesap)
+
+        if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
+            osgb_aylik, belge_aylik, ay_sayisi = dagit_osgb_belge(hesap, tutar, oran, bas_tarih, bit_tarih)
+            for i in range(ay_sayisi):
+                ay = (bas_tarih + pd.DateOffset(months=i)).strftime("%Y-%m")
+                konsolide_sonuc.append([hesap, ay, "Etki OSGB", osgb_aylik])
+                konsolide_sonuc.append([hesap, ay, "Etki Belgelendirme", belge_aylik])
+
+        elif sorumluluk == "BELGE ORTAK GİDER" and oran is not None:
+            belge_alt, ay_sayisi = dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih)
+            for i in range(ay_sayisi):
+                ay = (bas_tarih + pd.DateOffset(months=i)).strftime("%Y-%m")
+                for alt_kirilim, alt_tutar in belge_alt.items():
+                    konsolide_sonuc.append([hesap, ay, f"Etki Belgelendirme-{alt_kirilim}", alt_tutar])
+
+        else:
+            # Diğer sorumluluk merkezleri
+            ay_listesi = pd.date_range(bas_tarih, bit_tarih, freq='MS')
+            if len(ay_listesi) > 0:
+                tutar_aylik = tutar / len(ay_listesi)
+            else:
+                tutar_aylik = tutar
+            for ay in ay_listesi:
+                firma = "Etki OSGB" if "OSGB" in sorumluluk else "Etki Belgelendirme"
+                konsolide_sonuc.append([hesap, ay.strftime("%Y-%m"), firma, tutar_aylik])
+
+    # Konsolide DataFrame
+    sonuc_df = pd.DataFrame(konsolide_sonuc, columns=["HESAP İSMİ", "Ay", "Firma/Kırılım", "Tutar"])
+    return sonuc_df
+# ---------------------------------------------------
+
 def oran_bul(h_ismi):
     if not os.path.exists(ORAN_DOSYA):
         return None
