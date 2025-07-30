@@ -9,24 +9,25 @@ aylar = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","
 
 # ---------------- Yeni Dağıtım Mantığı ----------------
 def dagit_osgb_belge(hesap, tutar, oran, bas_tarih, bit_tarih):
-    """OSGB + BELGE ORTAK GİDER için tutarı oranlara göre dağıtır."""
+    """OSGB + BELGE ORTAK GİDER tutarını oranlara göre ay bazlı dağıtır."""
     ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
+
+    # OSGB payı
     osgb_tutar = tutar * oran["osgb"] / 100
-    belge_tutar = tutar * oran["belge"] / 100
     if ay_sayisi > 0:
         osgb_aylik = osgb_tutar / ay_sayisi
     else:
-        st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı. Tutar direkt olarak listelendi.")
+        st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı (OSGB). Tutar tek seferde listelendi.")
         osgb_aylik = osgb_tutar
-    if ay_sayisi > 0:
+
+    # BELGE payı
+    belge_tutar = tutar * oran["belge"] / 100
     if ay_sayisi > 0:
         belge_aylik = belge_tutar / ay_sayisi
     else:
-        st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı. Tutar direkt olarak listelendi.")
+        st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı (BELGE). Tutar tek seferde listelendi.")
         belge_aylik = belge_tutar
-else:
-    st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı. Tutar direkt olarak listelendi.")
-    belge_aylik = belge_tutar
+
     return osgb_aylik, belge_aylik, ay_sayisi
 
 def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
@@ -190,3 +191,20 @@ elif secim == "Oran Tanımla":
         else:
             edit.to_csv(ORAN_DOSYA, index=False)
             st.success("Oranlar kaydedildi.")
+
+def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
+    """BELGE ORTAK GİDER tutarını alt kırılımlara göre ay bazlı dağıtır."""
+    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
+    belge_alt = {}
+    for ao in ["egitim", "ilkyardim", "kalite", "uzmanlik"]:
+        if oran["belge"] > 0:
+            alt_tutar = tutar * (oran[ao] / oran["belge"])
+        else:
+            alt_tutar = 0
+
+        if ay_sayisi > 0:
+            belge_alt[ao] = alt_tutar / ay_sayisi
+        else:
+            st.warning(f"⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı ({ao}). Tutar tek seferde listelendi.")
+            belge_alt[ao] = alt_tutar
+    return belge_alt, ay_sayisi
