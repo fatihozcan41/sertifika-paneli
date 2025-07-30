@@ -108,8 +108,23 @@ elif secim == "Oran Tanımla":
         use_container_width=True
     )
     if st.button("💾 Değişiklikleri Kaydet"):
-        edited_df.to_csv(ORAN_DOSYA, index=False)
-        st.success("Oranlar başarıyla güncellendi.")
+        hatali_satirlar = []
+        for idx, row in edited_df.iterrows():
+            # 1. OSGB + Belge = 100 mü?
+            if (row['osgb'] + row['belge']) != 100:
+                hatali_satirlar.append(f"Satır {idx+1}: OSGB + Belge toplamı 100 olmalı.")
+                continue
+            # 2. Alt dağılım toplamı = Belge oranı mı?
+            if (row['egitim'] + row['ilkyardim'] + row['kalite'] + row['uzmanlik']) != row['belge']:
+                hatali_satirlar.append(f"Satır {idx+1}: Alt dağılım toplamı Belge oranına eşit olmalı.")
+        
+        if hatali_satirlar:
+            for hata in hatali_satirlar:
+                st.error(hata)
+            st.warning("⚠️ Lütfen hatalı satırları düzeltmeden kaydetmeyin.")
+        else:
+            edited_df.to_csv(ORAN_DOSYA, index=False)
+            st.success("Oranlar başarıyla güncellendi.")
 
 elif secim == "Raporlama":
     st.header("📊 Raporlama Paneli")
