@@ -35,11 +35,13 @@ if not dosya_listesi.empty:
             dosya_listesi = dosya_listesi.drop(i)
             dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
 
+            # Hafızadan (yuklenen_veriler.csv) da sil
             if os.path.exists(VERI_DOSYA):
                 veri_df = pd.read_csv(VERI_DOSYA)
                 veri_df = veri_df[veri_df["kaynak_dosya"] != row["dosya"]]
                 veri_df.to_csv(VERI_DOSYA, index=False)
 
+            st.success(f"🗑️ {row['dosya']} hafızadan tamamen silindi.")
             st.rerun()
 
 firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"])
@@ -48,7 +50,7 @@ tur = st.selectbox("Gider mi Gelir mi?", ["Gider", "Gelir"])
 yeni_dosya = st.file_uploader("Excel Dosyasını Seçin", type=["xlsx", "xls"])
 
 if yeni_dosya:
-    # Eğer aynı firma + ay + tür + dosya adı varsa sil
+    # Aynı kombinasyon varsa eski kayıtları temizle
     mask = (
         (dosya_listesi["firma"] == firma) &
         (dosya_listesi["ay"] == ay) &
@@ -71,4 +73,4 @@ if yeni_dosya:
     dosya_listesi = pd.concat([dosya_listesi, yeni_kayit], ignore_index=True)
     dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
 
-    st.success(f"✅ {firma} | {ay} | {tur} için {yeni_dosya.name} yüklendi. Eski kayıtlar temizlendi.")
+    st.success(f"✅ {firma} | {ay} | {tur} için {yeni_dosya.name} yüklendi.")
