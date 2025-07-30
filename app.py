@@ -21,6 +21,7 @@ secim = st.selectbox("Modül Seçiniz", ["Excel'den Yükle", "Oran Tanımla"])
 if secim == "Excel'den Yükle":
     st.header("📤 Excel'den Gelir/Gider Yükleme")
     yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"])
+    secilen_ay = st.selectbox("Hangi Ay İçin?", aylar)
     excel_dosyasi = st.file_uploader("Excel Dosyasını Seçin", type=["xlsx","xls"])
 
     if excel_dosyasi:
@@ -29,62 +30,63 @@ if secim == "Excel'den Yükle":
         bas_col = "Gider Başlangıç" if "Gider Başlangıç" in df.columns else "Başlangıç"
         bit_col = "Gider Bitiş Tarihi" if "Gider Bitiş Tarihi" in df.columns else "Bitiş"
 
-        if bas_col not in df.columns or bit_col not in df.columns:
-            st.error("Başlangıç ve Bitiş sütunları bulunamadı.")
-        else:
-            df[bas_col] = pd.to_datetime(df[bas_col])
-            df[bit_col] = pd.to_datetime(df[bit_col])
+        osgb_dagilim = []
+        belge_dagilim = []
 
-            osgb_dagilim = []
-            belge_dagilim = []
+        for _, row in df.iterrows():
+            hesap = row["HESAP İSMİ"]
+            sorumluluk = str(row["SORUMLULUK MERKEZİ İSMİ"]).upper().strip()
+            toplam_tutar = row["ANA DÖVİZ BORÇ"]
 
-            for _, row in df.iterrows():
-                hesap = row["HESAP İSMİ"]
-                sorumluluk = str(row["SORUMLULUK MERKEZİ İSMİ"]).upper().strip()
-                toplam_tutar = row["ANA DÖVİZ BORÇ"]
-                bas = row[bas_col]
-                bit = row[bit_col]
+            # Başlangıç ve bitiş varsa aylar arası dağıt, yoksa seçilen ay
+            if bas_col in df.columns and bit_col in df.columns and not pd.isna(row[bas_col]) and not pd.isna(row[bit_col]):
+                bas = pd.to_datetime(row[bas_col])
+                bit = pd.to_datetime(row[bit_col])
                 ay_sayisi = (bit.to_period('M') - bas.to_period('M')).n + 1
-                tutar_aylik = toplam_tutar / ay_sayisi if ay_sayisi > 0 else toplam_tutar
+                ay_listesi = [(bas + pd.DateOffset(months=i)).month for i in range(ay_sayisi)]
+            else:
+                # Sadece seçilen ay kullanılacak
+                ay_listesi = [aylar.index(secilen_ay) + 1]
 
-                oran = oran_bul(hesap)
+            tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
+            oran = oran_bul(hesap)
 
-                for i in range(ay_sayisi):
-                    ay_adi = aylar[(bas + pd.DateOffset(months=i)).month - 1]
+            for ay_no in ay_listesi:
+                ay_adi = aylar[ay_no - 1]
 
-                    if yuklenecek_firma == "Etki OSGB":
-                        if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
-                            osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
-                            belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
-                        else:
-                            osgb_dagilim.append((hesap, ay_adi, tutar_aylik))
+                if yuklenecek_firma == "Etki OSGB":
+                    if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
+                        osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
+                        belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
+                    else:
+                        osgb_dagilim.append((hesap, ay_adi, tutar_aylik))
 
-                    elif yuklenecek_firma == "Etki Belgelendirme":
-                        if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
-                            osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
-                            belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
-                        elif sorumluluk == "BELGE ORTAK GİDER" and oran is not None:
-                            for ao in ["egitim","ilkyardim","kalite","uzmanlik"]:
-                                alt_tutar = tutar_aylik * (oran[ao] / oran["belge"]) if oran["belge"] > 0 else 0
-                                belge_dagilim.append((f"{hesap}-{ao.upper()}", ay_adi, alt_tutar))
-                        else:
-                            belge_dagilim.append((hesap, ay_adi, tutar_aylik))
+                elif yuklenecek_firma == "Etki Belgelendirme":
+                    if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
+                        osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
+                        belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
+                    elif sorumluluk == "BELGE ORTAK GİDER" and oran is not None:
+                        for ao in ["egitim","ilkyardim","kalite","uzmanlik"]:
+                            alt_tutar = tutar_aylik * (oran[ao] / oran["belge"]) if oran["belge"] > 0 else 0
+                            belge_dagilim.append((f"{hesap}-{ao.upper()}", ay_adi, alt_tutar))
+                    else:
+                        belge_dagilim.append((hesap, ay_adi, tutar_aylik))
 
-            def pivot_tablo(data):
-                df = pd.DataFrame(data, columns=["HESAP İSMİ", "Ay", "Tutar"])
-                if df.empty:
-                    return pd.DataFrame(columns=["HESAP İSMİ"] + aylar)
-                pivot = df.pivot_table(index="HESAP İSMİ", columns="Ay", values="Tutar", aggfunc="sum").reset_index()
-                for ay in aylar:
-                    if ay not in pivot.columns:
-                        pivot[ay] = 0
-                return pivot[["HESAP İSMİ"] + aylar]
+        def pivot_tablo(data):
+            df = pd.DataFrame(data, columns=["HESAP İSMİ", "Ay", "Tutar"])
+            if df.empty:
+                return pd.DataFrame(columns=["HESAP İSMİ"] + aylar)
+            pivot = df.pivot_table(index="HESAP İSMİ", columns="Ay", values="Tutar", aggfunc="sum").reset_index()
+            for ay in aylar:
+                if ay not in pivot.columns:
+                    pivot[ay] = 0
+            return pivot[["HESAP İSMİ"] + aylar]
 
-            st.subheader("🟢 Etki OSGB Ay Bazlı Dağılım")
-            st.dataframe(pivot_tablo(osgb_dagilim), use_container_width=True)
+        st.subheader("🟢 Etki OSGB Ay Bazlı Dağılım")
+        st.dataframe(pivot_tablo(osgb_dagilim), use_container_width=True)
 
-            st.subheader("🔵 Etki Belgelendirme Ay Bazlı Dağılım")
-            st.dataframe(pivot_tablo(belge_dagilim), use_container_width=True)
+        st.subheader("🔵 Etki Belgelendirme Ay Bazlı Dağılım")
+        st.dataframe(pivot_tablo(belge_dagilim), use_container_width=True)
 
 # ---------------- Oran Tanımlama ----------------
 elif secim == "Oran Tanımla":
