@@ -45,7 +45,6 @@ if secim == "Excel'den Yükle":
                 ay_sayisi = (bit.to_period('M') - bas.to_period('M')).n + 1
                 ay_listesi = [(bas + pd.DateOffset(months=i)).month for i in range(ay_sayisi)]
             else:
-                # Sadece seçilen ay kullanılacak
                 ay_listesi = [aylar.index(secilen_ay) + 1]
 
             tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
@@ -80,6 +79,7 @@ if secim == "Excel'den Yükle":
             for ay in aylar:
                 if ay not in pivot.columns:
                     pivot[ay] = 0
+            pivot = pivot.fillna(0)  # None/NaN -> 0
             return pivot[["HESAP İSMİ"] + aylar]
 
         st.subheader("🟢 Etki OSGB Ay Bazlı Dağılım")
