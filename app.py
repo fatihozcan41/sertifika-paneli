@@ -7,45 +7,8 @@ VERI_DOSYA = "data/yuklenen_veriler.csv"
 aylar = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"]
 
 
-# ---------------- Yeni Dağıtım Mantığı ----------------
-def dagit_osgb_belge(hesap, tutar, oran, bas_tarih, bit_tarih):
-    """OSGB + BELGE ORTAK GİDER tutarını oranlara göre ay bazlı dağıtır."""
-    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
-
-    # OSGB payı
-    osgb_tutar = tutar * oran["osgb"] / 100
-    if ay_sayisi > 0:
-        osgb_aylik = osgb_tutar / ay_sayisi
-    else:
-        st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı (OSGB). Tutar tek seferde listelendi.")
-        osgb_aylik = osgb_tutar
-
-    # BELGE payı
-    belge_tutar = tutar * oran["belge"] / 100
-    if ay_sayisi > 0:
-        belge_aylik = belge_tutar / ay_sayisi
-    else:
-        st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı (BELGE). Tutar tek seferde listelendi.")
-        belge_aylik = belge_tutar
-
-    return osgb_aylik, belge_aylik, ay_sayisi
-
-def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
-    """BELGE ORTAK GİDER için alt kırılımlara göre dağıtım."""
-    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
-    belge_alt = {}
-    for ao in ["egitim", "ilkyardim", "kalite", "uzmanlik"]:
-        if oran["belge"] > 0:
-            alt_tutar = tutar * (oran[ao] / oran["belge"])
-        else:
-            alt_tutar = 0
-        belge_alt[ao] = alt_tutar / ay_sayisi
-    return belge_alt, ay_sayisi
-# -------------------------------------------------------
-
-# ---------------- Oran Kontrol Mantığı ----------------
+# ---------------- Eksik Oran Kontrolü ----------------
 def kontrol_oranlar_yukleme(df):
-    """Excel yüklendikten sonra oran kontrolü yapar."""
     eksik_listesi = []
     for idx, row in df.iterrows():
         sorumluluk = str(row.get("SORUMLULUK MERKEZİ İSMİ", "")).strip()
@@ -54,8 +17,33 @@ def kontrol_oranlar_yukleme(df):
             oran = oran_bul(hesap)
             if oran is None:
                 eksik_listesi.append(hesap)
-    return list(set(eksik_listesi))  # tekrarları kaldır
+    return list(set(eksik_listesi))
 # -------------------------------------------------------
+
+# ---------------- Dağıtım Fonksiyonları ----------------
+def dagit_osgb_belge(hesap, tutar, oran, bas_tarih, bit_tarih):
+    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
+
+    osgb_tutar = tutar * oran["osgb"] / 100
+    belge_tutar = tutar * oran["belge"] / 100
+
+    osgb_aylik = osgb_tutar / ay_sayisi if ay_sayisi > 0 else osgb_tutar
+    belge_aylik = belge_tutar / ay_sayisi if ay_sayisi > 0 else belge_tutar
+
+    return osgb_aylik, belge_aylik, ay_sayisi
+
+def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
+    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
+    belge_alt = {}
+    for ao in ["egitim", "ilkyardim", "kalite", "uzmanlik"]:
+        if oran["belge"] > 0:
+            alt_tutar = tutar * (oran[ao] / oran["belge"])
+        else:
+            alt_tutar = 0
+        belge_alt[ao] = alt_tutar / ay_sayisi if ay_sayisi > 0 else alt_tutar
+    return belge_alt, ay_sayisi
+# -------------------------------------------------------
+
 def oran_bul(h_ismi):
     if not os.path.exists(ORAN_DOSYA):
         return None
@@ -137,11 +125,7 @@ if secim == "Excel'den Yükle":
             else:
                 ay_listesi = [aylar.index(row["ay"]) + 1]
 
-            if ay_listesi and len(ay_listesi) > 0:
-    tutar_aylik = toplam_tutar / len(ay_listesi)
-else:
-    st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı. Tutar direkt olarak listelendi.")
-    tutar_aylik = toplam_tutar
+            tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
             oran = oran_bul(hesap)
 
             for ay_no in ay_listesi:
@@ -191,20 +175,3 @@ elif secim == "Oran Tanımla":
         else:
             edit.to_csv(ORAN_DOSYA, index=False)
             st.success("Oranlar kaydedildi.")
-
-def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
-    """BELGE ORTAK GİDER tutarını alt kırılımlara göre ay bazlı dağıtır."""
-    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
-    belge_alt = {}
-    for ao in ["egitim", "ilkyardim", "kalite", "uzmanlik"]:
-        if oran["belge"] > 0:
-            alt_tutar = tutar * (oran[ao] / oran["belge"])
-        else:
-            alt_tutar = 0
-
-        if ay_sayisi > 0:
-            belge_alt[ao] = alt_tutar / ay_sayisi
-        else:
-            st.warning(f"⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı ({ao}). Tutar tek seferde listelendi.")
-            belge_alt[ao] = alt_tutar
-    return belge_alt, ay_sayisi
