@@ -4,7 +4,6 @@ import os
 
 ORAN_DOSYA = "data/oranlar.csv"
 VERI_DOSYA = "data/yuklenen_veriler.csv"
-DOSYA_LISTESI = "data/yuklenen_dosyalar.csv"
 aylar = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"]
 
 def oran_bul(h_ismi):
@@ -33,84 +32,49 @@ secim = st.selectbox("Modül Seçiniz", ["Excel'den Yükle", "Oran Tanımla"])
 # ---------------- Excel'den Yükle ----------------
 if secim == "Excel'den Yükle":
     st.header("📤 Excel'den Gelir/Gider Yükleme")
-
-    # Dosya listesi dosyası yoksa oluştur
-    if not os.path.exists(DOSYA_LISTESI):
-        pd.DataFrame(columns=["dosya"]).to_csv(DOSYA_LISTESI, index=False)
-
-    # Mevcut yüklenen dosyaları göster
-    dosya_listesi = pd.read_csv(DOSYA_LISTESI)
-    if not dosya_listesi.empty:
-        st.subheader("📂 Yüklenen Dosyalar")
-        for i, row in dosya_listesi.iterrows():
-            col1, col2 = st.columns([4,1])
-            col1.write(row["dosya"])
-            if col2.button("❌ Sil", key=f"sil_{i}"):
-                # Dosya listeden silinsin ve veri de temizlensin
-                dosya_listesi = dosya_listesi.drop(i)
-                dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
-                if os.path.exists(VERI_DOSYA):
-                    veri_df = pd.read_csv(VERI_DOSYA)
-                    # Aynı dosyadan gelen tüm kayıtları sil
-                    veri_df = veri_df[veri_df["kaynak_dosya"] != row["dosya"]]
-                    veri_df.to_csv(VERI_DOSYA, index=False)
-                st.experimental_rerun()
-
     yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"])
     secilen_ay = st.selectbox("Hangi Ay İçin?", aylar)
     excel_dosyasi = st.file_uploader("Excel Dosyasını Seçin", type=["xlsx","xls"])
 
     if not os.path.exists(VERI_DOSYA):
-        pd.DataFrame(columns=["firma","ay","HESAP İSMİ","ANA DÖVİZ BORÇ",
-                              "SORUMLULUK MERKEZİ İSMİ","bas","bit","kaynak_dosya"]).to_csv(VERI_DOSYA, index=False)
+        pd.DataFrame(columns=["firma","ay","HESAP İSMİ","ANA DÖVİZ BORÇ","SORUMLULUK MERKEZİ İSMİ","bas","bit"]).to_csv(VERI_DOSYA, index=False)
 
     if excel_dosyasi:
-        # Dosya kaydedildi mi kontrol et
-        if excel_dosyasi.name not in list(dosya_listesi["dosya"]):
-            yeni_df = pd.read_excel(excel_dosyasi)
-            bas_col = "Gider Başlangıç" if "Gider Başlangıç" in yeni_df.columns else "Başlangıç"
-            bit_col = "Gider Bitiş Tarihi" if "Gider Bitiş Tarihi" in yeni_df.columns else "Bitiş"
+        yeni_df = pd.read_excel(excel_dosyasi)
+        bas_col = "Gider Başlangıç" if "Gider Başlangıç" in yeni_df.columns else "Başlangıç"
+        bit_col = "Gider Bitiş Tarihi" if "Gider Bitiş Tarihi" in yeni_df.columns else "Bitiş"
 
-            mevcut_df = pd.read_csv(VERI_DOSYA)
+        mevcut_df = pd.read_csv(VERI_DOSYA)
 
-            for _, row in yeni_df.iterrows():
-                hesap_ismi = row["HESAP İSMİ"]
-                # Aynı firma + ay + hesap ismi varsa eski kaydı sil
-                mevcut_df = mevcut_df[~(
-                    (mevcut_df["firma"] == yuklenecek_firma) & 
-                    (mevcut_df["ay"] == secilen_ay) & 
-                    (mevcut_df["HESAP İSMİ"] == hesap_ismi)
-                )]
-                bas = row[bas_col] if bas_col in yeni_df.columns else None
-                bit = row[bit_col] if bit_col in yeni_df.columns else None
-                yeni_kayit = {
-                    "firma": yuklenecek_firma,
-                    "ay": secilen_ay,
-                    "HESAP İSMİ": hesap_ismi,
-                    "ANA DÖVİZ BORÇ": row["ANA DÖVİZ BORÇ"],
-                    "SORUMLULUK MERKEZİ İSMİ": row["SORUMLULUK MERKEZİ İSMİ"],
-                    "bas": bas,
-                    "bit": bit,
-                    "kaynak_dosya": excel_dosyasi.name
-                }
-                mevcut_df = pd.concat([mevcut_df, pd.DataFrame([yeni_kayit])], ignore_index=True)
+        for _, row in yeni_df.iterrows():
+            hesap_ismi = row["HESAP İSMİ"]
+            # Aynı firma + ay + hesap ismi varsa eski kaydı sil
+            mevcut_df = mevcut_df[~(
+                (mevcut_df["firma"] == yuklenecek_firma) & 
+                (mevcut_df["ay"] == secilen_ay) & 
+                (mevcut_df["HESAP İSMİ"] == hesap_ismi)
+            )]
+            bas = row[bas_col] if bas_col in yeni_df.columns else None
+            bit = row[bit_col] if bit_col in yeni_df.columns else None
+            yeni_kayit = {
+                "firma": yuklenecek_firma,
+                "ay": secilen_ay,
+                "HESAP İSMİ": hesap_ismi,
+                "ANA DÖVİZ BORÇ": row["ANA DÖVİZ BORÇ"],
+                "SORUMLULUK MERKEZİ İSMİ": row["SORUMLULUK MERKEZİ İSMİ"],
+                "bas": bas,
+                "bit": bit
+            }
+            mevcut_df = pd.concat([mevcut_df, pd.DataFrame([yeni_kayit])], ignore_index=True)
 
-            mevcut_df.to_csv(VERI_DOSYA, index=False)
-            # Dosya listesine ekle
-            dosya_listesi = pd.concat([dosya_listesi, pd.DataFrame([[excel_dosyasi.name]], columns=["dosya"])], ignore_index=True)
-            dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
-            st.success(f"✅ {excel_dosyasi.name} yüklendi ve tablolar güncellendi.")
-            st.experimental_rerun()
-        else:
-            st.warning("Bu dosya zaten yüklenmiş. İsterseniz listeden silip tekrar yükleyin.")
+        mevcut_df.to_csv(VERI_DOSYA, index=False)
+        st.success("✅ Dosya yüklendi ve veriler güncellendi.")
 
-    # Ay Bazlı Dağılım tabloları göster
-    if os.path.exists(VERI_DOSYA):
-        tum_df = pd.read_csv(VERI_DOSYA)
+        # Ay Bazlı Dağılım otomatik göster
         osgb_dagilim = []
         belge_dagilim = []
 
-        for _, row in tum_df.iterrows():
+        for _, row in mevcut_df.iterrows():
             hesap = row["HESAP İSMİ"]
             sorumluluk = str(row["SORUMLULUK MERKEZİ İSMİ"]).upper().strip()
             toplam_tutar = row["ANA DÖVİZ BORÇ"]
