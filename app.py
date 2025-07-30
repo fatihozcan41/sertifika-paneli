@@ -22,7 +22,11 @@ for _, row in df.iterrows():
         bit_tarih = pd.to_datetime(row["Bitiş"], format="%b.%y")
     except ValueError:
         bit_tarih = pd.to_datetime(row["Bitiş"], dayfirst=True, errors="coerce")
-    ay_listesi = pd.date_range(bas_tarih, bit_tarih, freq="MS")
+    if pd.isna(bas_tarih) or pd.isna(bit_tarih):
+        st.warning(f"⚠️ {row['HESAP İSMİ']} için Başlangıç veya Bitiş tarihi hatalı. Tutar tek seferde listelendi.")
+        ay_listesi = []
+    else:
+        ay_listesi = pd.date_range(bas_tarih, bit_tarih, freq="MS")
     toplam_tutar = row["Tutar"]
 
     # Güvenli tutar_aylik hesaplaması
