@@ -37,12 +37,26 @@ for _, row in df.iterrows():
         tutar_aylik = toplam_tutar
         ay_listesi = [bas_tarih]
 
-    for ay in ay_listesi:
+    if not ay_listesi:
         sonuc.append({
             "HESAP İSMİ": row["HESAP İSMİ"],
-            "Ay": ay.strftime("%Y-%m"),
-            "Tutar (Aylık)": round(tutar_aylik, 2)
+            "Ay": "Tek Sefer",
+            "Tutar (Aylık)": round(toplam_tutar, 2)
         })
+    else:
+        for ay in ay_listesi:
+            if pd.isna(ay):
+                sonuc.append({
+                    "HESAP İSMİ": row["HESAP İSMİ"],
+                    "Ay": "Tek Sefer",
+                    "Tutar (Aylık)": round(toplam_tutar, 2)
+                })
+            else:
+                sonuc.append({
+                    "HESAP İSMİ": row["HESAP İSMİ"],
+                    "Ay": ay.strftime("%Y-%m"),
+                    "Tutar (Aylık)": round(tutar_aylik, 2)
+                })
 
 # Sonuç DataFrame
 sonuc_df = pd.DataFrame(sonuc)
