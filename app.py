@@ -45,23 +45,7 @@ if secim == "Excel'den Yükle":
         for i, row in dosya_listesi.iterrows():
             col1, col2 = st.columns([4,1])
             col1.write(row["dosya"])
-            
-col3 = st.columns([1])[0]
-if col2.button("❌ Sil", key=f"sil_{i}"):
-    # Silme işlemi
-    dosya_listesi = dosya_listesi.drop(i)
-    dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
-    if os.path.exists(VERI_DOSYA):
-        veri_df = pd.read_csv(VERI_DOSYA)
-        veri_df = veri_df[veri_df["kaynak_dosya"] != row["dosya"]]
-        veri_df.to_csv(VERI_DOSYA, index=False)
-    st.rerun()
-
-if col3.button("🔄 Değiştir", key=f"degistir_{i}"):
-    st.session_state["degistirilecek_dosya"] = row["dosya"]
-    st.session_state["degistirme_modu"] = True
-    st.rerun()
-:
+            if col2.button("❌ Sil", key=f"sil_{i}"):
                 # Dosya listeden silinsin ve veri de temizlensin
                 dosya_listesi = dosya_listesi.drop(i)
                 dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
@@ -118,45 +102,7 @@ if col3.button("🔄 Değiştir", key=f"degistir_{i}"):
 
                 st.rerun()
 
-    
-# Dosya değiştirme modu kontrolü
-if "degistirme_modu" in st.session_state and st.session_state.get("degistirme_modu", False):
-    st.subheader(f"🔄 '{st.session_state['degistirilecek_dosya']}' dosyasını değiştir")
-    yeni_dosya = st.file_uploader("Yeni dosyayı seçin", type=["xlsx","xls"], key="degistirme_dosya")
-    if yeni_dosya:
-        # Eski kaydı temizle
-        dosya_listesi = pd.read_csv(DOSYA_LISTESI)
-        dosya_listesi = dosya_listesi[dosya_listesi["dosya"] != st.session_state["degistirilecek_dosya"]]
-        dosya_listesi = pd.concat([dosya_listesi, pd.DataFrame([[yeni_dosya.name]], columns=["dosya"])], ignore_index=True)
-        dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
-
-        veri_df = pd.read_csv(VERI_DOSYA)
-        veri_df = veri_df[veri_df["kaynak_dosya"] != st.session_state["degistirilecek_dosya"]]
-
-        yeni_df = pd.read_excel(yeni_dosya)
-        bas_col = "Gider Başlangıç" if "Gider Başlangıç" in yeni_df.columns else "Başlangıç"
-        bit_col = "Gider Bitiş Tarihi" if "Gider Bitiş Tarihi" in yeni_df.columns else "Bitiş"
-
-        for _, row in yeni_df.iterrows():
-            yeni_kayit = {
-                "firma": "Etki OSGB",  # Firma bilgisini değiştirmeye göre ayarlayabilirsiniz
-                "ay": "Haziran",       # Ay bilgisini değiştirmeye göre ayarlayabilirsiniz
-                "HESAP İSMİ": row["HESAP İSMİ"],
-                "ANA DÖVİZ BORÇ": row["ANA DÖVİZ BORÇ"],
-                "SORUMLULUK MERKEZİ İSMİ": row["SORUMLULUK MERKEZİ İSMİ"],
-                "bas": row[bas_col] if bas_col in yeni_df.columns else None,
-                "bit": row[bit_col] if bit_col in yeni_df.columns else None,
-                "kaynak_dosya": yeni_dosya.name
-            }
-            veri_df = pd.concat([veri_df, pd.DataFrame([yeni_kayit])], ignore_index=True)
-
-        veri_df.to_csv(VERI_DOSYA, index=False)
-        st.session_state["degistirme_modu"] = False
-        st.success("Dosya başarıyla değiştirildi ve tablolar güncellendi.")
-        st.rerun()
-
-
-yuklenecek_firma = st.selectbox('Firma', ['Etki OSGB', 'Etki Belgelendirme'])
+    yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"])
     secilen_ay = st.selectbox("Hangi Ay İçin?", aylar)
     excel_dosyasi = st.file_uploader("Excel Dosyasını Seçin", type=["xlsx","xls"])
 
