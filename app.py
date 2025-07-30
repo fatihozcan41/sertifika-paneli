@@ -21,27 +21,7 @@ def kontrol_oranlar_yukleme(df):
 # -------------------------------------------------------
 
 # ---------------- Dağıtım Fonksiyonları ----------------
-def dagit_osgb_belge(hesap, tutar, oran, bas_tarih, bit_tarih):
-    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
 
-    osgb_tutar = tutar * oran["osgb"] / 100
-    belge_tutar = tutar * oran["belge"] / 100
-
-    osgb_aylik = osgb_tutar / ay_sayisi if ay_sayisi > 0 else osgb_tutar
-    belge_aylik = belge_tutar / ay_sayisi if ay_sayisi > 0 else belge_tutar
-
-    return osgb_aylik, belge_aylik, ay_sayisi
-
-def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
-    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
-    belge_alt = {}
-    for ao in ["egitim", "ilkyardim", "kalite", "uzmanlik"]:
-        if oran["belge"] > 0:
-            alt_tutar = tutar * (oran[ao] / oran["belge"])
-        else:
-            alt_tutar = 0
-        belge_alt[ao] = alt_tutar / ay_sayisi if ay_sayisi > 0 else alt_tutar
-    return belge_alt, ay_sayisi
 # -------------------------------------------------------
 
 
@@ -218,3 +198,41 @@ elif secim == "Oran Tanımla":
         else:
             edit.to_csv(ORAN_DOSYA, index=False)
             st.success("Oranlar kaydedildi.")
+
+
+def dagit_osgb_belge(hesap, tutar, oran, bas_tarih, bit_tarih):
+    """OSGB + BELGE ORTAK GİDER tutarını oranlara göre ay bazlı dağıtır."""
+    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
+
+    osgb_tutar = tutar * oran["osgb"] / 100
+    belge_tutar = tutar * oran["belge"] / 100
+
+    if ay_sayisi > 0:
+        osgb_aylik = osgb_tutar / ay_sayisi
+        belge_aylik = belge_tutar / ay_sayisi
+    else:
+        st.warning("⚠️ Başlangıç-Bitiş aralığında ay bulunamadı. Tutarlar tek seferde dağıtıldı.")
+        osgb_aylik = osgb_tutar
+        belge_aylik = belge_tutar
+
+    return osgb_aylik, belge_aylik, ay_sayisi
+
+
+def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
+    """BELGE ORTAK GİDER tutarını alt kırılımlara göre ay bazlı dağıtır."""
+    ay_sayisi = (bit_tarih.year - bas_tarih.year) * 12 + (bit_tarih.month - bas_tarih.month) + 1
+    belge_alt = {}
+
+    for ao in ["egitim", "ilkyardim", "kalite", "uzmanlik"]:
+        if oran["belge"] > 0:
+            alt_tutar = tutar * (oran[ao] / oran["belge"])
+        else:
+            alt_tutar = 0
+
+        if ay_sayisi > 0:
+            belge_alt[ao] = alt_tutar / ay_sayisi
+        else:
+            st.warning(f"⚠️ Başlangıç-Bitiş aralığında ay bulunamadı ({ao}). Tek seferde dağıtıldı.")
+            belge_alt[ao] = alt_tutar
+
+    return belge_alt, ay_sayisi
