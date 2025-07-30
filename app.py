@@ -171,16 +171,14 @@ for idx, row in tum_df.iterrows():
             hesap = row["HESAP İSMİ"]
             sorumluluk = str(row["SORUMLULUK MERKEZİ İSMİ"]).upper().strip()
             toplam_tutar = row["ANA DÖVİZ BORÇ"]
-            # Başlangıç tarih kontrolü
-    try:
+            try:
         bas = pd.to_datetime(row["bas"]) if pd.notna(row["bas"]) else None
-    except Exception:
+    except:
         hata_satirlari.append((idx+1, row["HESAP İSMİ"], row["bas"], row["bit"]))
         bas = None
-            # Bitiş tarih kontrolü
-    try:
+            try:
         bit = pd.to_datetime(row["bit"]) if pd.notna(row["bit"]) else None
-    except Exception:
+    except:
         hata_satirlari.append((idx+1, row["HESAP İSMİ"], row["bas"], row["bit"]))
         bit = None
 
@@ -212,7 +210,7 @@ for idx, row in tum_df.iterrows():
                     else:
                         belge_dagilim.append((hesap, ay_adi, tutar_aylik))
 
-        # Tarih hatası olan satırlar için uyarı
+        # Hata mesajlarını göster
 if hata_satirlari:
     for hs in hata_satirlari:
         st.warning(f"⚠️ Satır {hs[0]} ({hs[1]}) için Başlangıç/Bitiş tarihleri hatalı veya boş: {hs[2]} - {hs[3]}")
