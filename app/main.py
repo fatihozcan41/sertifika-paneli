@@ -1,27 +1,25 @@
 
-# v45 main uygulama dosyası
-# Yüklenmiş dosya kontrolü kaldırıldı, tekrar yükleme serbest.
+# v46 main uygulama dosyası
+# 'Bu dosya zaten yüklenmiş' uyarısı ve tüm kontrol mekanizmaları tamamen kaldırıldı.
 
 import os
 import shutil
 
-uploaded_files = set()       # Bu artık kullanılmıyor ama istenirse ayar için kalabilir
-check_duplicate = False      # Aynı dosya tekrar yüklemeyi engelleme ayarı (default: False)
-
 def tum_verileri_sifirla():
-    print("Tüm veriler sıfırlanıyor...")
+    print("Tüm veriler ve session state temizleniyor...")
+    # Data klasörünü temizle
     if os.path.exists("data"):
         shutil.rmtree("data")
         os.makedirs("data", exist_ok=True)
-    print("Data klasörü ve geçmiş temizlendi.")
+
+    # Streamlit state temizliği (varsa)
+    try:
+        import streamlit as st
+        st.session_state.clear()
+        print("Streamlit session_state temizlendi.")
+    except:
+        print("Streamlit modülü yok veya session_state kullanılmıyor.")
 
 def excel_yukle(file_path):
-    if check_duplicate:
-        import hashlib
-        with open(file_path, "rb") as f:
-            file_hash = hashlib.md5(f.read()).hexdigest()
-        if file_hash in uploaded_files:
-            print("UYARI: Bu dosya daha önce yüklenmiş olabilir.")
-        else:
-            uploaded_files.add(file_hash)
-    print(f"{file_path} başarıyla yüklendi (kontrol yapılmadı veya serbest bırakıldı).")
+    # Artık hiçbir kontrol yapılmıyor, her dosya yüklenebilir
+    print(f"{file_path} başarıyla yüklendi. (Kontrol yapılmadı)")

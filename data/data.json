@@ -1,1 +1,1 @@
-{"version": "v45", "desc": "Yüklenmiş dosya kontrolü kaldırıldı"}
+{"version": "v46", "desc": "Uyarı mekanizması kaldırıldı ve session_state temizleniyor"}
