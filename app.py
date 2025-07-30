@@ -54,54 +54,7 @@ if secim == "Excel'den Yükle":
                     # Aynı dosyadan gelen tüm kayıtları sil
                     veri_df = veri_df[veri_df["kaynak_dosya"] != row["dosya"]]
                     veri_df.to_csv(VERI_DOSYA, index=False)
-                
-# Silme sonrası tabloları güncelle
-if os.path.exists(VERI_DOSYA):
-    tum_df = pd.read_csv(VERI_DOSYA)
-    osgb_dagilim = []
-    belge_dagilim = []
-    for _, row in tum_df.iterrows():
-        hesap = row["HESAP İSMİ"]
-        sorumluluk = str(row["SORUMLULUK MERKEZİ İSMİ"]).upper().strip()
-        toplam_tutar = row["ANA DÖVİZ BORÇ"]
-        bas = pd.to_datetime(row["bas"]) if pd.notna(row["bas"]) else None
-        bit = pd.to_datetime(row["bit"]) if pd.notna(row["bit"]) else None
-
-        if bas is not None and bit is not None:
-            ay_sayisi = (bit.to_period('M') - bas.to_period('M')).n + 1
-            ay_listesi = [(bas + pd.DateOffset(months=i)).month for i in range(ay_sayisi)]
-        else:
-            ay_listesi = [aylar.index(row["ay"]) + 1]
-
-        tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
-        oran = oran_bul(hesap)
-
-        for ay_no in ay_listesi:
-            ay_adi = aylar[ay_no - 1]
-            if row["firma"] == "Etki OSGB":
-                if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
-                    osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
-                    belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
-                else:
-                    osgb_dagilim.append((hesap, ay_adi, tutar_aylik))
-            elif row["firma"] == "Etki Belgelendirme":
-                if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
-                    osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
-                    belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
-                elif sorumluluk == "BELGE ORTAK GİDER" and oran is not None:
-                    for ao in ["egitim","ilkyardim","kalite","uzmanlik"]:
-                        alt_tutar = tutar_aylik * (oran[ao] / oran["belge"]) if oran["belge"] > 0 else 0
-                        belge_dagilim.append((f"{hesap}-{ao.upper()}", ay_adi, alt_tutar))
-                else:
-                    belge_dagilim.append((hesap, ay_adi, tutar_aylik))
-    st.subheader("🟢 Etki OSGB Ay Bazlı Dağılım")
-    st.dataframe(pivot_tablo(osgb_dagilim), use_container_width=True)
-
-    st.subheader("🔵 Etki Belgelendirme Ay Bazlı Dağılım")
-    st.dataframe(pivot_tablo(belge_dagilim), use_container_width=True)
-
-st.rerun()
-
+                st.rerun()
 
     yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"])
     secilen_ay = st.selectbox("Hangi Ay İçin?", aylar)
@@ -147,54 +100,7 @@ st.rerun()
             dosya_listesi = pd.concat([dosya_listesi, pd.DataFrame([[excel_dosyasi.name]], columns=["dosya"])], ignore_index=True)
             dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
             st.success(f"✅ {excel_dosyasi.name} yüklendi ve tablolar güncellendi.")
-            
-# Silme sonrası tabloları güncelle
-if os.path.exists(VERI_DOSYA):
-    tum_df = pd.read_csv(VERI_DOSYA)
-    osgb_dagilim = []
-    belge_dagilim = []
-    for _, row in tum_df.iterrows():
-        hesap = row["HESAP İSMİ"]
-        sorumluluk = str(row["SORUMLULUK MERKEZİ İSMİ"]).upper().strip()
-        toplam_tutar = row["ANA DÖVİZ BORÇ"]
-        bas = pd.to_datetime(row["bas"]) if pd.notna(row["bas"]) else None
-        bit = pd.to_datetime(row["bit"]) if pd.notna(row["bit"]) else None
-
-        if bas is not None and bit is not None:
-            ay_sayisi = (bit.to_period('M') - bas.to_period('M')).n + 1
-            ay_listesi = [(bas + pd.DateOffset(months=i)).month for i in range(ay_sayisi)]
-        else:
-            ay_listesi = [aylar.index(row["ay"]) + 1]
-
-        tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
-        oran = oran_bul(hesap)
-
-        for ay_no in ay_listesi:
-            ay_adi = aylar[ay_no - 1]
-            if row["firma"] == "Etki OSGB":
-                if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
-                    osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
-                    belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
-                else:
-                    osgb_dagilim.append((hesap, ay_adi, tutar_aylik))
-            elif row["firma"] == "Etki Belgelendirme":
-                if sorumluluk == "OSGB + BELGE ORTAK GİDER" and oran is not None:
-                    osgb_dagilim.append((hesap, ay_adi, tutar_aylik * oran["osgb"] / 100))
-                    belge_dagilim.append((hesap, ay_adi, tutar_aylik * oran["belge"] / 100))
-                elif sorumluluk == "BELGE ORTAK GİDER" and oran is not None:
-                    for ao in ["egitim","ilkyardim","kalite","uzmanlik"]:
-                        alt_tutar = tutar_aylik * (oran[ao] / oran["belge"]) if oran["belge"] > 0 else 0
-                        belge_dagilim.append((f"{hesap}-{ao.upper()}", ay_adi, alt_tutar))
-                else:
-                    belge_dagilim.append((hesap, ay_adi, tutar_aylik))
-    st.subheader("🟢 Etki OSGB Ay Bazlı Dağılım")
-    st.dataframe(pivot_tablo(osgb_dagilim), use_container_width=True)
-
-    st.subheader("🔵 Etki Belgelendirme Ay Bazlı Dağılım")
-    st.dataframe(pivot_tablo(belge_dagilim), use_container_width=True)
-
-st.rerun()
-
+            st.rerun()
         else:
             st.warning("Bu dosya zaten yüklenmiş. İsterseniz listeden silip tekrar yükleyin.")
 
