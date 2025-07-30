@@ -84,16 +84,19 @@ elif secim == "Excel'den Yükle":
                     st.success("✅ Excel verileri başarıyla aktarıldı.")
 
                     # --- Ay Bazlı Dağılım Tablosu ---
-                    if "Gider Başlangıç" in yuklenen_df.columns and "Gider Bitiş Tarihi" in yuklenen_df.columns:
+                    if (("Gider Başlangıç" in yuklenen_df.columns or "Başlangıç" in yuklenen_df.columns) and 
+                        ("Gider Bitiş Tarihi" in yuklenen_df.columns or "Bitiş" in yuklenen_df.columns)):
                         try:
-                            yuklenen_df["Gider Başlangıç"] = pd.to_datetime(yuklenen_df["Gider Başlangıç"])
-                            yuklenen_df["Gider Bitiş Tarihi"] = pd.to_datetime(yuklenen_df["Gider Bitiş Tarihi"])
+                            bas_col = "Gider Başlangıç" if "Gider Başlangıç" in yuklenen_df.columns else "Başlangıç"
+                            bit_col = "Gider Bitiş Tarihi" if "Gider Bitiş Tarihi" in yuklenen_df.columns else "Bitiş"
+                            yuklenen_df[bas_col] = pd.to_datetime(yuklenen_df[bas_col])
+                            yuklenen_df[bit_col] = pd.to_datetime(yuklenen_df[bit_col])
                             aylar = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"]
                             
                             dagilim_listesi = []
                             for _, row in yuklenen_df.iterrows():
-                                bas = row["Gider Başlangıç"]
-                                bit = row["Gider Bitiş Tarihi"]
+                                bas = row[bas_col]
+                                bit = row[bit_col]
                                 toplam_ay = (bit.to_period('M') - bas.to_period('M')).n + 1
                                 tutar = row["ANA DÖVİZ BORÇ"] / toplam_ay if toplam_ay > 0 else row["ANA DÖVİZ BORÇ"]
                                 
