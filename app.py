@@ -29,6 +29,20 @@ def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
         belge_alt[ao] = alt_tutar / ay_sayisi
     return belge_alt, ay_sayisi
 # -------------------------------------------------------
+
+# ---------------- Oran Kontrol Mantığı ----------------
+def kontrol_oranlar_yukleme(df):
+    """Excel yüklendikten sonra oran kontrolü yapar."""
+    eksik_listesi = []
+    for idx, row in df.iterrows():
+        sorumluluk = str(row.get("SORUMLULUK MERKEZİ İSMİ", "")).strip()
+        hesap = str(row.get("HESAP İSMİ", "")).strip()
+        if sorumluluk in ["OSGB + BELGE ORTAK GİDER", "BELGE ORTAK GİDER"]:
+            oran = oran_bul(hesap)
+            if oran is None:
+                eksik_listesi.append(hesap)
+    return list(set(eksik_listesi))  # tekrarları kaldır
+# -------------------------------------------------------
 def oran_bul(h_ismi):
     if not os.path.exists(ORAN_DOSYA):
         return None
