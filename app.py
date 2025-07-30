@@ -14,8 +14,14 @@ df = pd.DataFrame(data)
 
 sonuc = []
 for _, row in df.iterrows():
-    bas_tarih = pd.to_datetime(row["Başlangıç"], format="%b.%y")
-    bit_tarih = pd.to_datetime(row["Bitiş"], format="%b.%y")
+    try:
+        bas_tarih = pd.to_datetime(row["Başlangıç"], format="%b.%y")
+    except ValueError:
+        bas_tarih = pd.to_datetime(row["Başlangıç"], dayfirst=True, errors="coerce")
+    try:
+        bit_tarih = pd.to_datetime(row["Bitiş"], format="%b.%y")
+    except ValueError:
+        bit_tarih = pd.to_datetime(row["Bitiş"], dayfirst=True, errors="coerce")
     ay_listesi = pd.date_range(bas_tarih, bit_tarih, freq="MS")
     toplam_tutar = row["Tutar"]
 
