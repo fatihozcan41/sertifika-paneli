@@ -54,7 +54,7 @@ if secim == "Excel'den Yükle":
                     # Aynı dosyadan gelen tüm kayıtları sil
                     veri_df = veri_df[veri_df["kaynak_dosya"] != row["dosya"]]
                     veri_df.to_csv(VERI_DOSYA, index=False)
-                st.rerun()
+                st.experimental_rerun()
 
     yuklenecek_firma = st.selectbox("Firma", ["Etki OSGB", "Etki Belgelendirme"])
     secilen_ay = st.selectbox("Hangi Ay İçin?", aylar)
@@ -100,7 +100,7 @@ if secim == "Excel'den Yükle":
             dosya_listesi = pd.concat([dosya_listesi, pd.DataFrame([[excel_dosyasi.name]], columns=["dosya"])], ignore_index=True)
             dosya_listesi.to_csv(DOSYA_LISTESI, index=False)
             st.success(f"✅ {excel_dosyasi.name} yüklendi ve tablolar güncellendi.")
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.warning("Bu dosya zaten yüklenmiş. İsterseniz listeden silip tekrar yükleyin.")
 
