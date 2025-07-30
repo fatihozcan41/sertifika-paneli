@@ -7,7 +7,6 @@ import plotly.express as px
 VERI_DOSYA = "data/veriler.csv"
 ORAN_DOSYA = "data/oranlar.csv"
 
-# Oran kontrol fonksiyonu
 def oran_var_mi(h_ismi):
     if not os.path.exists(ORAN_DOSYA):
         return False
@@ -78,17 +77,40 @@ elif secim == "Excel'den Yükle":
                         "tutar": yuklenen_df["ANA DÖVİZ BORÇ"],
                         "sorumluluk": yuklenen_df["SORUMLULUK MERKEZİ İSMİ"]
                     })
-                    ortak_satirlar = aktarim_df[aktarim_df["sorumluluk"].str.upper().isin(["BELGE ORTAK GİDER","OSGB + BELGE ORTAK GİDER"])]
-                    oran_df = pd.read_csv(ORAN_DOSYA)
-                    eksik_oranlar = ortak_satirlar[~ortak_satirlar["hesap_ismi"].isin(oran_df["hesap_ismi"])]
-                    if not eksik_oranlar.empty:
-                        st.warning("⚠️ Aşağıdaki HESAP İSMİ değerleri için oran tanımı yapılmamış:")
-                        st.dataframe(eksik_oranlar["hesap_ismi"].unique())
 
                     mevcut_df = pd.read_csv(VERI_DOSYA)
                     birlesmis = pd.concat([mevcut_df, aktarim_df], ignore_index=True)
                     birlesmis.to_csv(VERI_DOSYA, index=False)
                     st.success("✅ Excel verileri başarıyla aktarıldı.")
+
+                    # --- Ay Bazlı Dağılım Tablosu ---
+                    if "Gider Başlangıç" in yuklenen_df.columns and "Gider Bitiş Tarihi" in yuklenen_df.columns:
+                        try:
+                            yuklenen_df["Gider Başlangıç"] = pd.to_datetime(yuklenen_df["Gider Başlangıç"])
+                            yuklenen_df["Gider Bitiş Tarihi"] = pd.to_datetime(yuklenen_df["Gider Bitiş Tarihi"])
+                            aylar = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"]
+                            
+                            dagilim_listesi = []
+                            for _, row in yuklenen_df.iterrows():
+                                bas = row["Gider Başlangıç"]
+                                bit = row["Gider Bitiş Tarihi"]
+                                toplam_ay = (bit.to_period('M') - bas.to_period('M')).n + 1
+                                tutar = row["ANA DÖVİZ BORÇ"] / toplam_ay if toplam_ay > 0 else row["ANA DÖVİZ BORÇ"]
+                                
+                                dagilim = { "HESAP İSMİ": row["HESAP İSMİ"] }
+                                for i in range(toplam_ay):
+                                    ay = (bas + pd.DateOffset(months=i)).month
+                                    ay_adi = aylar[ay-1]
+                                    dagilim[ay_adi] = tutar
+                                dagilim_listesi.append(dagilim)
+                            
+                            dagilim_df = pd.DataFrame(dagilim_listesi).fillna(0)
+                            st.markdown("### 📊 Ay Bazlı Dağılım Tablosu")
+                            st.dataframe(dagilim_df, use_container_width=True)
+                        except Exception as e:
+                            st.warning(f"Ay bazlı dağılım tablosu oluşturulamadı: {e}")
+                    else:
+                        st.info("Excel dosyasında 'Gider Başlangıç' ve 'Gider Bitiş Tarihi' kolonları bulunamadı.")
             except Exception as e:
                 st.error(f"Hata oluştu: {e}")
 
@@ -108,6 +130,7 @@ elif secim == "Oran Tanımla":
             ilkyardim = float(row.get('ilkyardim', 0) or 0)
             kalite = float(row.get('kalite', 0) or 0)
             uzmanlik = float(row.get('uzmanlik', 0) or 0)
+
             if abs((osgb + belge) - 100) > 0.001:
                 hatali_satirlar.append(f"Satır {idx+1}: OSGB + Belge toplamı 100 olmalı.")
                 continue
