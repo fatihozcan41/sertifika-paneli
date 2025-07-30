@@ -14,7 +14,11 @@ def dagit_osgb_belge(hesap, tutar, oran, bas_tarih, bit_tarih):
     osgb_tutar = tutar * oran["osgb"] / 100
     belge_tutar = tutar * oran["belge"] / 100
     osgb_aylik = osgb_tutar / ay_sayisi
+    if ay_sayisi > 0:
     belge_aylik = belge_tutar / ay_sayisi
+else:
+    st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı. Tutar direkt olarak listelendi.")
+    belge_aylik = belge_tutar
     return osgb_aylik, belge_aylik, ay_sayisi
 
 def dagit_belge_alt(hesap, tutar, oran, bas_tarih, bit_tarih):
@@ -124,7 +128,11 @@ if secim == "Excel'den Yükle":
             else:
                 ay_listesi = [aylar.index(row["ay"]) + 1]
 
-            tutar_aylik = toplam_tutar / len(ay_listesi) if len(ay_listesi) > 0 else toplam_tutar
+            if ay_listesi and len(ay_listesi) > 0:
+    tutar_aylik = toplam_tutar / len(ay_listesi)
+else:
+    st.warning("⚠️ Başlangıç ve Bitiş tarihleri arasında geçerli ay bulunamadı. Tutar direkt olarak listelendi.")
+    tutar_aylik = toplam_tutar
             oran = oran_bul(hesap)
 
             for ay_no in ay_listesi:
