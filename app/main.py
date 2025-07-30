@@ -1,9 +1,11 @@
 
-# v42 main uygulama dosyası
-# "Tüm verileri sıfırla" artık yükleme geçmişini de temizleyecek.
+# v43 main uygulama dosyası
+# Reset sonrası bellek cache + yükleme geçmişi de temizlenecek
+
+uploaded_files = set()  # Bellekte tutulan hash listesi
 
 def tum_verileri_sifirla():
-    print("Veriler siliniyor...")
+    print("Veriler ve cache siliniyor...")
     # data klasörünü temizle
     import shutil, os
     if os.path.exists("data"):
@@ -14,4 +16,8 @@ def tum_verileri_sifirla():
     history_file = os.path.join("data", "upload_history.json")
     if os.path.exists(history_file):
         os.remove(history_file)
-    print("Tüm veriler ve yükleme geçmişi sıfırlandı.")
+
+    # Bellekteki hash/cache sıfırla
+    global uploaded_files
+    uploaded_files.clear()
+    print("Tüm veriler, yükleme geçmişi ve bellek cache sıfırlandı.")
