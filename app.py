@@ -166,12 +166,21 @@ if secim == "Excel'den Yükle":
         osgb_dagilim = []
         belge_dagilim = []
 
-        for _, row in tum_df.iterrows():
+        hata_satirlari = []
+for idx, row in tum_df.iterrows():
             hesap = row["HESAP İSMİ"]
             sorumluluk = str(row["SORUMLULUK MERKEZİ İSMİ"]).upper().strip()
             toplam_tutar = row["ANA DÖVİZ BORÇ"]
-            bas = pd.to_datetime(row["bas"]) if pd.notna(row["bas"]) else None
-            bit = pd.to_datetime(row["bit"]) if pd.notna(row["bit"]) else None
+            try:
+        bas = pd.to_datetime(row["bas"]) if pd.notna(row["bas"]) else None
+    except:
+        hata_satirlari.append((idx+1, row["HESAP İSMİ"], row["bas"], row["bit"]))
+        bas = None
+            try:
+        bit = pd.to_datetime(row["bit"]) if pd.notna(row["bit"]) else None
+    except:
+        hata_satirlari.append((idx+1, row["HESAP İSMİ"], row["bas"], row["bit"]))
+        bit = None
 
             if bas is not None and bit is not None:
                 ay_sayisi = (bit.to_period('M') - bas.to_period('M')).n + 1
@@ -201,7 +210,12 @@ if secim == "Excel'den Yükle":
                     else:
                         belge_dagilim.append((hesap, ay_adi, tutar_aylik))
 
-        st.subheader("🟢 Etki OSGB Ay Bazlı Dağılım")
+        # Hata mesajlarını göster
+if hata_satirlari:
+    for hs in hata_satirlari:
+        st.warning(f"⚠️ Satır {hs[0]} ({hs[1]}) için Başlangıç/Bitiş tarihleri hatalı veya boş: {hs[2]} - {hs[3]}")
+
+st.subheader("🟢 Etki OSGB Ay Bazlı Dağılım")
         st.dataframe(pivot_tablo(osgb_dagilim), use_container_width=True)
 
         st.subheader("🔵 Etki Belgelendirme Ay Bazlı Dağılım")
