@@ -131,6 +131,18 @@ elif secim == "Oran Tanımla":
                 oranlar_df.to_csv(ORAN_DOSYA, index=False)
                 st.success("✅ Oran tanımı kaydedildi.")
 
+    st.markdown("---")
+    st.subheader("📝 Mevcut Oranları Düzenle")
+
+    if not oranlar_df.empty:
+        edited_df = st.data_editor(oranlar_df, num_rows="dynamic", use_container_width=True)
+        if st.button("💾 Değişiklikleri Kaydet"):
+            edited_df.to_csv(ORAN_DOSYA, index=False)
+            st.success("Oranlar başarıyla güncellendi.")
+    else:
+        st.info("Henüz tanımlanmış oran bulunmamaktadır.")
+
+
 # -------------------- Raporlama --------------------
 elif secim == "Raporlama":
     st.header("📊 Raporlama Paneli")
