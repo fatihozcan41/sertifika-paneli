@@ -1,11 +1,14 @@
-Etki Finansal Analiz Platformu - Demo
+Etki Finansal Analiz Platformu - GÜNCEL SÜRÜM (v2)
+
+✅ Bu sürümde "İşlem Tipi" (Gelir / Gider) seçimi aktiftir.
 
 Kullanım:
-1. 'index.html' dosyasına çift tıklayarak tarayıcıda açın.
+1. 'index.html' dosyasını çift tıklayarak tarayıcıda açın.
 2. 'Veri Dosyası Yükle' butonuna tıklayın.
-3. Açılan pencerede şirket: Etki OSGB, ay: Haziran, yıl: 2025 ve işlem tipi: Gider olarak seçin.
-4. 'Dosya Seç' butonuna tıklayarak 'ornek-veri.xlsx' dosyasını yükleyin.
-5. Açılan oran penceresinde gerekli oranları girin.
-6. Tablolar ve grafikler otomatik olarak oluşacaktır.
-
-Hazırlayan: ChatGPT OpenAI destekli finansal analiz asistanı.
+3. Şirket: Etki OSGB
+   Ay: Haziran
+   Yıl: 2025
+   İşlem Tipi: Gider
+4. 'Dosya Seç' ile 'ornek-veri.xlsx' dosyasını yükleyin.
+5. Her bir hesap ismi için oran girin.
+6. Sistem otomatik hesaplama ve grafik sunacaktır.
