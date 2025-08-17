@@ -1,0 +1,7 @@
+streamlit
+sqlalchemy
+pandas
+openpyxl
+passlib[bcrypt]
+python-dotenv
+plotly

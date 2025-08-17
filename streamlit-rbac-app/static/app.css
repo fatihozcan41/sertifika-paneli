@@ -1,0 +1,4 @@
+/* Extra tweaks for Streamlit containers */
+.block-container { padding-top: 1rem; padding-bottom: 2rem; }
+.small-muted { font-size: 0.85rem; color: #6b7280; }
+.navbar { display:flex; align-items:center; justify-content:space-between; padding:.5rem 1rem; border-bottom:1px solid #e5e7eb; }
